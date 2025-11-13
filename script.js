@@ -96,13 +96,167 @@ function setupEventListeners() {
 
 // Initialize Desktop Icons
 function initializeDesktopIcons() {
-    // Position desktop icons
-    positionDesktopIcon(fileManagerIcon, 20, 20);
+    // Position desktop icons with saved positions or defaults
+    const myComputerPos = getDesktopIconPosition('myComputer');
+    const fileManagerPos = getDesktopIconPosition('fileManager');
+    
+    positionDesktopIcon(document.getElementById('myComputerIcon'), myComputerPos.x || 20, myComputerPos.y || 20);
+    positionDesktopIcon(fileManagerIcon, fileManagerPos.x || 20, fileManagerPos.y || 100);
+    
+    // Make icons draggable
+    makeDesktopIconDraggable(document.getElementById('myComputerIcon'), 'myComputer');
+    makeDesktopIconDraggable(fileManagerIcon, 'fileManager');
 }
 
 function positionDesktopIcon(icon, x, y) {
     icon.style.left = `${x}px`;
     icon.style.top = `${y}px`;
+}
+
+// Make desktop icon draggable with grid snapping
+function makeDesktopIconDraggable(icon, iconId) {
+    let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
+    let offsetX = 0;
+    let offsetY = 0;
+    let dragTimer = null;
+    let hasMoved = false;
+    const gridSize = 100; // Grid snap size
+    const dragThreshold = 5; // Pixels to move before starting drag
+    
+    icon.addEventListener('mousedown', dragStart);
+    
+    function dragStart(e) {
+        // Calculate offset from mouse position to icon's top-left corner
+        const rect = icon.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        
+        // Get current position from style
+        initialLeft = parseFloat(icon.style.left) || 0;
+        initialTop = parseFloat(icon.style.top) || 0;
+        
+        // Get mouse position relative to viewport
+        startX = e.clientX;
+        startY = e.clientY;
+        hasMoved = false;
+        
+        // Set a timer to start dragging after a short delay
+        // This allows double-click to work
+        dragTimer = setTimeout(() => {
+            if (!hasMoved) {
+                isDragging = true;
+                icon.style.zIndex = '1000';
+                icon.style.cursor = 'grabbing';
+                icon.classList.add('dragging');
+            }
+        }, 150); // Small delay to allow double-click
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    function drag(e) {
+        const deltaX = Math.abs(e.clientX - startX);
+        const deltaY = Math.abs(e.clientY - startY);
+        
+        // Check if mouse has moved enough to start dragging
+        if (deltaX > dragThreshold || deltaY > dragThreshold) {
+            hasMoved = true;
+            if (dragTimer) {
+                clearTimeout(dragTimer);
+                dragTimer = null;
+            }
+            if (!isDragging) {
+                isDragging = true;
+                icon.style.zIndex = '1000';
+                icon.style.cursor = 'grabbing';
+                icon.classList.add('dragging');
+            }
+        }
+        
+        if (!isDragging) return;
+        e.preventDefault();
+        
+        // Calculate new position keeping the offset constant
+        // This ensures the cursor stays on the same spot of the icon
+        const newX = e.clientX - offsetX;
+        const newY = e.clientY - offsetY;
+        
+        // Keep within desktop bounds during drag
+        const minX = 0;
+        const minY = 0;
+        const maxX = window.innerWidth - 80; // icon width
+        const maxY = window.innerHeight - 80 - 30; // icon height + taskbar
+        
+        const constrainedX = Math.max(minX, Math.min(maxX, newX));
+        const constrainedY = Math.max(minY, Math.min(maxY, newY));
+        
+        icon.style.left = `${constrainedX}px`;
+        icon.style.top = `${constrainedY}px`;
+    }
+    
+    function dragEnd(e) {
+        if (dragTimer) {
+            clearTimeout(dragTimer);
+            dragTimer = null;
+        }
+        
+        if (!isDragging) {
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+            return;
+        }
+        
+        isDragging = false;
+        icon.style.cursor = 'pointer';
+        icon.classList.remove('dragging');
+        
+        // Get current position
+        let finalX = parseFloat(icon.style.left) || 0;
+        let finalY = parseFloat(icon.style.top) || 0;
+        
+        // Snap to grid only on release
+        finalX = Math.round(finalX / gridSize) * gridSize;
+        finalY = Math.round(finalY / gridSize) * gridSize;
+        
+        // Keep within bounds after snapping
+        const minX = 0;
+        const minY = 0;
+        const maxX = window.innerWidth - 80;
+        const maxY = window.innerHeight - 80 - 30;
+        
+        finalX = Math.max(minX, Math.min(maxX, finalX));
+        finalY = Math.max(minY, Math.min(maxY, finalY));
+        
+        // Apply snapped position
+        icon.style.left = `${finalX}px`;
+        icon.style.top = `${finalY}px`;
+        
+        // Save snapped position
+        saveDesktopIconPosition(iconId, {
+            x: finalX,
+            y: finalY
+        });
+        
+        document.removeEventListener('mousemove', drag);
+        document.removeEventListener('mouseup', dragEnd);
+    }
+}
+
+// Save/restore desktop icon positions
+function saveDesktopIconPosition(iconId, position) {
+    localStorage.setItem(`desktop_icon_pos_${iconId}`, JSON.stringify(position));
+}
+
+function getDesktopIconPosition(iconId) {
+    const saved = localStorage.getItem(`desktop_icon_pos_${iconId}`);
+    return saved ? JSON.parse(saved) : { x: null, y: null };
 }
 
 // Window Management
