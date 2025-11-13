@@ -109,54 +109,110 @@ body {
     color: var(--win95-white);
 }
 
-/* Icon Graphics */
+/* Icon Graphics - Better Windows 95 Style Icons */
 .icon-computer {
     width: 32px;
     height: 32px;
-    background: var(--win95-gray-light);
-    border: 2px outset var(--win95-gray-light);
     position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
 
-.icon-computer::before {
-    content: '';
-    position: absolute;
-    top: 4px;
-    left: 4px;
-    right: 4px;
-    bottom: 8px;
+.icon-screen {
+    width: 24px;
+    height: 18px;
     background: var(--win95-blue);
-    border: 1px inset var(--win95-gray);
-}
-
-.icon-folder {
-    width: 32px;
-    height: 32px;
-    background: var(--win95-gray-light);
     border: 2px outset var(--win95-gray-light);
     position: relative;
+    box-shadow: 
+        inset 1px 1px 0px rgba(0, 0, 0, 0.5),
+        inset -1px -1px 0px rgba(255, 255, 255, 0.3);
 }
 
-.icon-folder::before {
+.icon-screen::before {
     content: '';
     position: absolute;
     top: 2px;
     left: 2px;
     right: 2px;
-    height: 6px;
-    background: var(--win95-blue);
+    bottom: 2px;
+    background: linear-gradient(135deg, #000080 0%, #0000ff 50%, #000080 100%);
     border: 1px inset var(--win95-gray);
 }
 
-.icon-folder::after {
+.icon-screen::after {
     content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    width: 3px;
+    height: 3px;
+    background: #00ff00;
+    box-shadow: 4px 0 0 #00ff00, 8px 0 0 #00ff00;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
+}
+
+.icon-base {
+    width: 28px;
+    height: 4px;
+    background: var(--win95-gray-light);
+    border: 1px inset var(--win95-gray);
+    margin-top: 2px;
+    box-shadow: inset 1px 1px 0px rgba(0, 0, 0, 0.3);
+}
+
+.icon-folder {
+    width: 32px;
+    height: 32px;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+.icon-folder-tab {
+    width: 14px;
+    height: 10px;
+    background: linear-gradient(180deg, #ffd700 0%, #ffaa00 100%);
+    border: 1px outset var(--win95-gray-light);
+    position: absolute;
+    top: 0;
+    left: 2px;
+    z-index: 2;
+    box-shadow: 
+        1px 1px 0px rgba(255, 255, 255, 0.5),
+        -1px -1px 0px rgba(0, 0, 0, 0.2);
+    clip-path: polygon(0 0, 100% 0, 80% 100%, 0 100%);
+}
+
+.icon-folder-body {
+    width: 28px;
+    height: 22px;
+    background: linear-gradient(180deg, #ffd700 0%, #ffaa00 100%);
+    border: 2px outset var(--win95-gray-light);
     position: absolute;
     top: 8px;
     left: 2px;
-    right: 2px;
-    bottom: 2px;
-    background: var(--win95-gray-light);
-    border: 1px inset var(--win95-gray);
+    box-shadow: 
+        inset 1px 1px 0px rgba(255, 255, 255, 0.4),
+        inset -1px -1px 0px rgba(0, 0, 0, 0.3);
+}
+
+.icon-folder-body::before {
+    content: '';
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    right: 4px;
+    height: 2px;
+    background: rgba(0, 0, 0, 0.1);
+    box-shadow: 0 3px 0 rgba(0, 0, 0, 0.1), 0 6px 0 rgba(0, 0, 0, 0.1);
 }
 
 /* Windows 95 Window Style */
@@ -662,6 +718,8 @@ body {
     height: 18px;
     display: flex;
     align-items: center;
+    cursor: move;
+    user-select: none;
 }
 
 .dialog-content {
@@ -701,6 +759,51 @@ body {
     transform: none !important;
 }
 
+/* Screensaver */
+.screensaver {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: #000000;
+    z-index: 99999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: none;
+}
+
+.screensaver-content {
+    color: #00ff00;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    line-height: 1.2;
+    white-space: pre;
+    text-align: center;
+    text-shadow: 0 0 10px #00ff00;
+    animation: screensaver-glow 2s ease-in-out infinite alternate;
+}
+
+@keyframes screensaver-glow {
+    0% {
+        text-shadow: 0 0 10px #00ff00, 0 0 20px #00ff00;
+    }
+    100% {
+        text-shadow: 0 0 20px #00ff00, 0 0 30px #00ff00, 0 0 40px #00ff00;
+    }
+}
+
+/* Window Dragging */
+.win95-window.window-dragging {
+    opacity: 0.9;
+    transition: none;
+}
+
+.win95-window {
+    transition: opacity 0.1s;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .file-list {
@@ -709,5 +812,9 @@ body {
     
     .win95-window {
         min-width: 250px;
+    }
+    
+    .screensaver-content {
+        font-size: 10px;
     }
 }

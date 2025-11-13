@@ -39,6 +39,9 @@ let isAdmin = false;
 let editingFileId = null;
 let openWindows = [];
 let zIndexCounter = 100;
+let screensaverTimeout = null;
+let screensaverActive = false;
+let lastActivityTime = Date.now();
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -49,6 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
     loadFiles();
     updateClock();
     setInterval(updateClock, 1000);
+    initializeScreensaver();
+    resetScreensaverTimer();
     
     // Position file manager window
     positionWindow(fileManagerWindow, 100, 100);
@@ -64,12 +69,15 @@ function setupEventListeners() {
     
     // File manager
     setupWindowControls(fileManagerWindow);
+    makeWindowDraggable(fileManagerWindow);
     
     // File viewer
     setupWindowControls(fileViewerWindow);
+    makeWindowDraggable(fileViewerWindow);
     
     // Admin panel
     setupWindowControls(adminPanel);
+    makeWindowDraggable(adminPanel);
     
     // Login
     loginForm.addEventListener('submit', handleLogin);
@@ -78,6 +86,12 @@ function setupEventListeners() {
         passwordInput.value = '';
         loginError.textContent = '';
     });
+    
+    // Make login dialog draggable
+    const loginDialogTitlebar = loginDialog.querySelector('.dialog-titlebar');
+    if (loginDialogTitlebar) {
+        makeWindowDraggable(loginDialog);
+    }
     
     // Admin actions
     logoutBtn?.addEventListener('click', handleLogout);
@@ -294,42 +308,77 @@ function setupWindowControls(window) {
 }
 
 function makeWindowDraggable(window) {
-    const titlebar = window.querySelector('.win95-window-titlebar');
+    // Support both window titlebars and dialog titlebars
+    const titlebar = window.querySelector('.win95-window-titlebar') || window.querySelector('.dialog-titlebar');
     if (!titlebar) return;
     
     let isDragging = false;
-    let startX, startY, initialLeft, initialTop;
+    let startX, startY, initialLeft, initialTop, offsetX, offsetY;
     
     titlebar.addEventListener('mousedown', (e) => {
         // Don't drag if clicking on buttons
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
         
+        resetScreensaverTimer();
+        
         isDragging = true;
         bringToFront(window);
         
+        // Remove transform if present (for dialogs that start centered)
+        if (window.style.transform && window.style.transform.includes('translate')) {
+            const rect = window.getBoundingClientRect();
+            window.style.left = `${rect.left}px`;
+            window.style.top = `${rect.top}px`;
+            window.style.transform = 'none';
+        }
+        
+        // Calculate offset from click position to window's top-left
+        const rect = window.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        
         startX = e.clientX;
         startY = e.clientY;
-        const rect = window.getBoundingClientRect();
         initialLeft = rect.left;
         initialTop = rect.top;
+        
+        // Add dragging class for visual feedback
+        window.classList.add('window-dragging');
         
         document.addEventListener('mousemove', dragWindow);
         document.addEventListener('mouseup', stopDrag);
         e.preventDefault();
+        e.stopPropagation();
     });
     
     function dragWindow(e) {
         if (!isDragging) return;
         
-        const deltaX = e.clientX - startX;
-        const deltaY = e.clientY - startY;
+        // Calculate new position maintaining the offset
+        // This makes dragging feel more natural and responsive
+        const newX = e.clientX - offsetX;
+        const newY = e.clientY - offsetY;
         
-        window.style.left = `${initialLeft + deltaX}px`;
-        window.style.top = `${initialTop + deltaY}px`;
+        // Keep window within viewport bounds
+        const minX = 0;
+        const minY = 0;
+        const maxX = window.innerWidth - (window.offsetWidth || 300);
+        const maxY = window.innerHeight - 30 - (window.offsetHeight || 200); // Account for taskbar
+        
+        const constrainedX = Math.max(minX, Math.min(maxX, newX));
+        const constrainedY = Math.max(minY, Math.min(maxY, newY));
+        
+        // Use transform for smoother rendering during drag
+        window.style.left = `${constrainedX}px`;
+        window.style.top = `${constrainedY}px`;
+        
+        resetScreensaverTimer();
     }
     
     function stopDrag() {
+        if (!isDragging) return;
         isDragging = false;
+        window.classList.remove('window-dragging');
         document.removeEventListener('mousemove', dragWindow);
         document.removeEventListener('mouseup', stopDrag);
     }
@@ -449,6 +498,12 @@ function openFile(file) {
         <div class="file-date">Created: ${formattedDate}</div>
         <div style="white-space: pre-wrap; line-height: 1.6;">${escapeHtml(file.content)}</div>
     `;
+    
+    // Update window title
+    const titleElement = fileViewerWindow.querySelector('.win95-window-title');
+    if (titleElement) {
+        titleElement.textContent = file.name;
+    }
     
     openWindow(fileViewerWindow);
     makeWindowDraggable(fileViewerWindow);
@@ -687,3 +742,115 @@ startBtn.addEventListener('click', (e) => {
 
 // Make editFile globally accessible
 window.editFile = editFile;
+
+// Screensaver
+function initializeScreensaver() {
+    const screensaver = document.getElementById('screensaver');
+    const screensaverContent = document.getElementById('screensaverContent');
+    
+    // Activity tracking
+    const activityEvents = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+    activityEvents.forEach(event => {
+        document.addEventListener(event, () => {
+            if (screensaverActive) {
+                deactivateScreensaver();
+            }
+            resetScreensaverTimer();
+        });
+    });
+}
+
+function resetScreensaverTimer() {
+    lastActivityTime = Date.now();
+    if (screensaverTimeout) {
+        clearTimeout(screensaverTimeout);
+    }
+    // Activate screensaver after 2 minutes of inactivity
+    screensaverTimeout = setTimeout(() => {
+        activateScreensaver();
+    }, 120000); // 2 minutes
+}
+
+function activateScreensaver() {
+    if (screensaverActive) return;
+    screensaverActive = true;
+    const screensaver = document.getElementById('screensaver');
+    const screensaverContent = document.getElementById('screensaverContent');
+    screensaver.classList.remove('hidden');
+    startScreensaverAnimation(screensaverContent);
+}
+
+function deactivateScreensaver() {
+    if (!screensaverActive) return;
+    screensaverActive = false;
+    const screensaver = document.getElementById('screensaver');
+    screensaver.classList.add('hidden');
+    resetScreensaverTimer();
+}
+
+function startScreensaverAnimation(container) {
+    let frame = 0;
+    const asciiFrames = generateAsciiAnimation();
+    
+    function animate() {
+        if (!screensaverActive) return;
+        
+        frame++;
+        const frameIndex = frame % asciiFrames.length;
+        container.textContent = asciiFrames[frameIndex];
+        
+        requestAnimationFrame(() => {
+            setTimeout(animate, 100); // ~10 FPS for retro feel
+        });
+    }
+    
+    animate();
+}
+
+function generateAsciiAnimation() {
+    // Create animated ASCII art - bouncing ball
+    const frames = [];
+    const width = 40;
+    const height = 15;
+    const ballChar = '●';
+    const trailChar = '·';
+    
+    for (let i = 0; i < 60; i++) {
+        let animation = '';
+        const time = i * 0.2;
+        
+        // Bouncing ball position
+        const x = Math.floor((Math.sin(time) + 1) / 2 * (width - 1));
+        const y = Math.floor((Math.cos(time * 1.3) + 1) / 2 * (height - 1));
+        
+        // Previous positions for trail
+        const prevX1 = Math.floor((Math.sin(time - 0.1) + 1) / 2 * (width - 1));
+        const prevY1 = Math.floor((Math.cos((time - 0.1) * 1.3) + 1) / 2 * (height - 1));
+        const prevX2 = Math.floor((Math.sin(time - 0.2) + 1) / 2 * (width - 1));
+        const prevY2 = Math.floor((Math.cos((time - 0.2) * 1.3) + 1) / 2 * (height - 1));
+        
+        for (let row = 0; row < height; row++) {
+            for (let col = 0; col < width; col++) {
+                if (col === x && row === y) {
+                    animation += ballChar;
+                } else if ((col === prevX1 && row === prevY1) || (col === prevX2 && row === prevY2)) {
+                    animation += trailChar;
+                } else {
+                    animation += ' ';
+                }
+            }
+            animation += '\n';
+        }
+        
+        // Add title and combine
+        let frame = '╔════════════════════════════════════════╗\n';
+        frame += '║      WINDOWS 95 SCREENSAVER          ║\n';
+        frame += '╚════════════════════════════════════════╝\n\n';
+        frame += animation;
+        frame += '\n\nMove mouse or press any key to continue...';
+        
+        frames.push(frame);
+    }
+    
+    return frames;
+}
