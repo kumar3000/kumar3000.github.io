@@ -9,83 +9,56 @@
 <body>
     <div class="scanlines"></div>
     <div class="screen-content">
-        <!-- Navigation -->
-        <nav class="navbar">
-        <div class="nav-container">
-            <h1 class="logo">ENTRY LOG</h1>
-        </div>
-    </nav>
-
-    <!-- Admin Panel Window (hidden by default) -->
-    <div id="adminPanel" class="win95-window hidden">
-        <div class="win95-window-titlebar">
-            <span class="win95-window-title">ADMINISTRATOR PANEL</span>
-            <button class="win95-window-close" id="adminWindowClose">&times;</button>
-        </div>
-        <div class="win95-window-content">
-        <div class="admin-container">
-            <h2>ADMINISTRATOR PANEL</h2>
-            <button id="logoutBtn" class="logout-btn">LOGOUT</button>
-            <button id="newPostBtn" class="new-post-btn">+ NEW ENTRY</button>
+        <!-- Desktop Background -->
+        <div class="desktop-background">
+            <!-- Desktop Icons Container -->
+            <div id="desktopIcons" class="desktop-icons">
+                <!-- Blog files will be dynamically inserted here -->
+            </div>
             
-            <!-- Post Editor -->
-            <div id="postEditor" class="post-editor hidden">
-                <h3 id="editorTitle">CREATE NEW ENTRY</h3>
-                <form id="postForm">
-                    <input type="text" id="postTitle" placeholder="ENTRY TITLE" required>
-                    <textarea id="postContent" placeholder="ENTER DOCUMENTATION..." rows="10" required></textarea>
-                    <select id="postType">
-                        <option value="post">SHORT POST</option>
-                        <option value="blog">BLOG ENTRY</option>
-                    </select>
-                    <div class="editor-actions">
-                        <button type="submit" id="savePostBtn">APPROVE & SAVE</button>
-                        <button type="button" id="cancelPostBtn">CANCEL</button>
-                        <button type="button" id="deletePostBtn" class="delete-btn hidden">DELETE ENTRY</button>
+            <!-- Sticky Notes Container -->
+            <div id="stickyNotesContainer" class="sticky-notes-container">
+                <!-- Sticky notes will be dynamically inserted here -->
+            </div>
+        </div>
+
+        <!-- Admin Panel Window (hidden by default) -->
+        <div id="adminPanel" class="win95-window hidden">
+            <div class="win95-window-titlebar">
+                <span class="win95-window-title">ADMINISTRATOR PANEL</span>
+                <button class="win95-window-close" id="adminWindowClose">&times;</button>
+            </div>
+            <div class="win95-window-content">
+                <div class="admin-container">
+                    <h2>ADMINISTRATOR PANEL</h2>
+                    <button id="logoutBtn" class="logout-btn">LOGOUT</button>
+                    <button id="newPostBtn" class="new-post-btn">+ NEW ENTRY</button>
+                    
+                    <!-- Post Editor -->
+                    <div id="postEditor" class="post-editor hidden">
+                        <h3 id="editorTitle">CREATE NEW ENTRY</h3>
+                        <form id="postForm">
+                            <input type="text" id="postTitle" placeholder="ENTRY TITLE" required>
+                            <textarea id="postContent" placeholder="ENTER DOCUMENTATION..." rows="10" required></textarea>
+                            <select id="postType">
+                                <option value="post">SHORT POST</option>
+                                <option value="blog">BLOG ENTRY</option>
+                            </select>
+                            <div class="editor-actions">
+                                <button type="submit" id="savePostBtn">APPROVE & SAVE</button>
+                                <button type="button" id="cancelPostBtn">CANCEL</button>
+                                <button type="button" id="deletePostBtn" class="delete-btn hidden">DELETE ENTRY</button>
+                            </div>
+                        </form>
                     </div>
-                </form>
-            </div>
 
-            <!-- Posts List -->
-            <div id="postsList" class="posts-list">
-                <h3>ENTRY ARCHIVE</h3>
-                <div id="adminPostsContainer"></div>
+                    <!-- Posts List -->
+                    <div id="postsList" class="posts-list">
+                        <h3>ENTRY ARCHIVE</h3>
+                        <div id="adminPostsContainer"></div>
+                    </div>
+                </div>
             </div>
-        </div>
-        </div>
-    </div>
-
-    <!-- Main Content -->
-    <main class="main-content">
-        <div class="container">
-            <!-- Filter Tabs -->
-            <div class="filter-tabs">
-                <button class="tab-btn active" data-filter="all">ALL ENTRIES</button>
-                <button class="tab-btn" data-filter="blog">BLOGS</button>
-            </div>
-
-            <!-- Posts Container -->
-            <div id="postsContainer" class="posts-container">
-                <!-- Posts will be dynamically inserted here -->
-            </div>
-
-            <!-- Empty State -->
-            <div id="emptyState" class="empty-state hidden">
-                <p>NO ENTRIES FOUND. CHECK BACK SOON.</p>
-            </div>
-        </div>
-    </main>
-        
-        <!-- Desktop Taskbar -->
-        <div class="desktop-taskbar">
-            <button id="notesBtn" class="taskbar-btn notes-btn">
-                <span class="taskbar-icon">📝</span>
-                <span class="taskbar-label">NOTES</span>
-            </button>
-            <button id="adminBtn" class="taskbar-btn admin-taskbar-btn hidden">
-                <span class="taskbar-icon">⚙️</span>
-                <span class="taskbar-label">ADMIN</span>
-            </button>
         </div>
         
         <!-- Notes App Window -->
@@ -101,6 +74,18 @@
                     <p id="noClosedNotes" class="no-closed-notes">NO CLOSED NOTES</p>
                 </div>
             </div>
+        </div>
+        
+        <!-- Desktop Taskbar -->
+        <div class="desktop-taskbar">
+            <button id="notesBtn" class="taskbar-btn notes-btn">
+                <span class="taskbar-icon">📝</span>
+                <span class="taskbar-label">NOTES</span>
+            </button>
+            <button id="adminBtn" class="taskbar-btn admin-taskbar-btn hidden">
+                <span class="taskbar-icon">⚙️</span>
+                <span class="taskbar-label">ADMIN</span>
+            </button>
         </div>
     </div>
 

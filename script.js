@@ -19,10 +19,9 @@ const logoutBtn = document.getElementById('logoutBtn');
 const newPostBtn = document.getElementById('newPostBtn');
 const postEditor = document.getElementById('postEditor');
 const postForm = document.getElementById('postForm');
-const postsContainer = document.getElementById('postsContainer');
+const desktopIcons = document.getElementById('desktopIcons');
+const stickyNotesContainer = document.getElementById('stickyNotesContainer');
 const adminPostsContainer = document.getElementById('adminPostsContainer');
-const emptyState = document.getElementById('emptyState');
-const filterTabs = document.querySelectorAll('.tab-btn');
 const editorTitle = document.getElementById('editorTitle');
 const deletePostBtn = document.getElementById('deletePostBtn');
 const blogViewerModal = document.getElementById('blogViewerModal');
@@ -81,14 +80,7 @@ function setupEventListeners() {
         });
     }
     
-    filterTabs.forEach(tab => {
-        tab.addEventListener('click', () => {
-            filterTabs.forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            currentFilter = tab.dataset.filter;
-            loadPosts();
-        });
-    });
+    // Removed filter tabs - desktop doesn't need them
 
     // Close modals when clicking outside
     window.addEventListener('click', (e) => {
@@ -266,43 +258,35 @@ function savePosts(posts) {
 
 function loadPosts() {
     const posts = getPosts();
-    const filteredPosts = currentFilter === 'all' 
-        ? posts 
-        : posts.filter(post => post.type === currentFilter);
     
-    postsContainer.innerHTML = '';
-    
-    if (filteredPosts.length === 0) {
-        emptyState.classList.remove('hidden');
-        return;
-    }
-    
-    emptyState.classList.add('hidden');
+    // Clear containers
+    desktopIcons.innerHTML = '';
+    stickyNotesContainer.innerHTML = '';
     
     // Separate posts and blogs
-    const shortPosts = filteredPosts.filter(p => p.type === 'post');
-    const blogPosts = filteredPosts.filter(p => p.type === 'blog');
+    const shortPosts = posts.filter(p => p.type === 'post');
+    const blogPosts = posts.filter(p => p.type === 'blog');
     
     // Sort by date (newest first)
     shortPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
     blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
     
-    // Add sticky notes (absolute positioned) - only if visible and not closed
+    // Add sticky notes - only if visible and not closed
     if (stickyNotesVisible) {
         shortPosts.forEach(post => {
             // Check if note is closed (for non-admins)
             const isClosed = localStorage.getItem(`sticky_closed_${post.id}`) === 'true';
             if (!isClosed || isAdmin) {
                 const postCard = createPostCard(post);
-                postsContainer.appendChild(postCard);
+                stickyNotesContainer.appendChild(postCard);
             }
         });
     }
     
-    // Add file icons directly to posts container (absolute positioned)
+    // Add file icons to desktop
     blogPosts.forEach(post => {
         const postCard = createPostCard(post);
-        postsContainer.appendChild(postCard);
+        desktopIcons.appendChild(postCard);
     });
 }
 
@@ -328,12 +312,12 @@ function createPostCard(post) {
             card.style.top = `${savedPos.y}px`;
             card.style.transform = `rotate(${savedPos.rotation}deg)`;
         } else {
-            // Random initial position
-            const randomX = Math.random() * (window.innerWidth - 300) + 50;
-            const randomY = Math.random() * (window.innerHeight - 300) + 100;
+            // Random initial position on desktop
+            const randomX = Math.random() * (window.innerWidth - 280) + 20;
+            const randomY = Math.random() * (window.innerHeight - 250) + 20;
             card.style.left = `${randomX}px`;
             card.style.top = `${randomY}px`;
-            card.style.transform = `rotate(${(Math.random() * 6 - 3)}deg)`;
+            card.style.transform = `rotate(${(Math.random() * 8 - 4)}deg)`;
         }
         
         card.innerHTML = `
@@ -374,14 +358,14 @@ function createPostCard(post) {
             card.style.left = `${savedPos.x}px`;
             card.style.top = `${savedPos.y}px`;
         } else {
-            // Default grid position based on index
+            // Default grid position based on index (desktop icon layout)
             const blogPosts = getPosts().filter(p => p.type === 'blog');
             const index = blogPosts.findIndex(p => p.id === post.id);
-            const cols = Math.floor((window.innerWidth - 200) / gridSize);
+            const cols = Math.floor((window.innerWidth - 100) / gridSize);
             const col = index % cols;
             const row = Math.floor(index / cols);
-            card.style.left = `${50 + col * gridSize}px`;
-            card.style.top = `${150 + row * gridSize}px`;
+            card.style.left = `${20 + col * gridSize}px`;
+            card.style.top = `${20 + row * gridSize}px`;
         }
         
         card.innerHTML = `
@@ -684,8 +668,8 @@ function updateStickyNotesVisibility() {
     const posts = getPosts();
     const shortPosts = posts.filter(p => p.type === 'post');
     
-    // Remove all existing sticky notes
-    document.querySelectorAll('.sticky-note').forEach(note => note.remove());
+    // Clear sticky notes container
+    stickyNotesContainer.innerHTML = '';
     
     // Add sticky notes if visible and not closed (unless admin)
     if (stickyNotesVisible) {
@@ -695,7 +679,7 @@ function updateStickyNotesVisibility() {
             const isClosed = localStorage.getItem(`sticky_closed_${post.id}`) === 'true';
             if (!isClosed || isAdmin) {
                 const postCard = createPostCard(post);
-                postsContainer.appendChild(postCard);
+                stickyNotesContainer.appendChild(postCard);
             }
         });
     }

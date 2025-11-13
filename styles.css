@@ -75,6 +75,18 @@ body {
 .screen-content {
     position: relative;
     z-index: 1;
+    min-height: 100vh;
+    padding-bottom: 50px; /* Space for taskbar */
+    overflow: hidden;
+}
+
+/* Desktop Background */
+.desktop-background {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 50px; /* Above taskbar */
     background: 
         repeating-linear-gradient(
             0deg,
@@ -89,9 +101,30 @@ body {
             rgba(8, 25, 8, 0.98) 50%,
             rgba(5, 20, 5, 0.98) 100%
         );
-    min-height: 100vh;
     background-size: 100% 4px, 100% 100%;
-    padding-bottom: 50px; /* Space for taskbar */
+    z-index: 0;
+}
+
+/* Desktop Icons Container */
+.desktop-icons {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 50px;
+    z-index: 10;
+    pointer-events: none;
+}
+
+/* Sticky Notes Container */
+.sticky-notes-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 50px;
+    z-index: 20;
+    pointer-events: none;
 }
 
 /* CRT Screen Glow */
@@ -466,121 +499,28 @@ body::before {
     text-transform: uppercase;
 }
 
-/* Main Content */
-.main-content {
-    width: 100%;
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    position: relative;
-    min-height: calc(100vh - 80px - 50px);
-}
-
-.main-content::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: 
-        repeating-linear-gradient(
-            90deg,
-            transparent,
-            transparent 98px,
-            rgba(0, 50, 0, 0.03) 98px,
-            rgba(0, 50, 0, 0.03) 100px
-        ),
-        repeating-linear-gradient(
-            0deg,
-            transparent,
-            transparent 98px,
-            rgba(0, 50, 0, 0.03) 98px,
-            rgba(0, 50, 0, 0.03) 100px
-        );
-    pointer-events: none;
-    z-index: 0;
-}
-
-.container {
-    width: 100%;
-    position: relative;
-    min-height: 100%;
-    padding: 0;
-}
-
-/* Filter Tabs */
-.filter-tabs {
-    display: flex;
-    gap: 0;
-    margin: 0;
-    border: 2px inset var(--border-color);
-    background: linear-gradient(180deg, #1a2a1a 0%, #0f1f0f 100%);
-    box-shadow: 
-        inset 0 0 10px rgba(0, 0, 0, 0.5),
-        0 0 5px var(--crt-glow);
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    z-index: 100;
-    max-width: 400px;
-}
-
-.tab-btn {
-    background-color: var(--bg-panel);
-    border: none;
-    border-right: 2px solid var(--border-color);
-    padding: 0.75rem 1.5rem;
-    cursor: pointer;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.9rem;
-    color: var(--text-secondary);
-    text-transform: uppercase;
-    transition: all 0.2s;
-    flex: 1;
-}
-
-.tab-btn:last-child {
-    border-right: none;
-}
-
-.tab-btn:hover {
-    background-color: var(--bg-card);
-    color: var(--text-primary);
-}
-
-.tab-btn.active {
-    background-color: var(--red-primary);
-    color: var(--text-primary);
-    font-weight: bold;
-}
-
-/* Posts Container */
-.posts-container {
-    position: relative;
-    min-height: 100vh;
-    padding: 0;
-    z-index: 1;
-    overflow: visible;
-}
+/* Removed old main-content, container, filter-tabs, and posts-container styles - desktop doesn't need them */
 
 /* Windows 95 Files Container - removed, files are now absolute positioned */
 
-/* Sticky Notes (Short Posts) */
+/* Sticky Notes (Short Posts) - Realistic Post-It Notes */
 .sticky-note {
     background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%);
-    padding: 1.5rem;
-    min-height: 200px;
-    width: 280px;
+    padding: 1.2rem 1rem 1rem 1rem;
+    min-height: 180px;
+    width: 240px;
     box-shadow: 
-        0 4px 8px rgba(0, 0, 0, 0.3),
-        0 0 0 1px rgba(0, 0, 0, 0.1) inset;
+        0 4px 8px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(0, 0, 0, 0.15) inset,
+        0 2px 4px rgba(0, 0, 0, 0.2);
     position: absolute;
-    transition: box-shadow 0.2s;
-    font-family: 'Share Tech Mono', monospace;
+    transition: box-shadow 0.2s, transform 0.1s;
+    font-family: 'Comic Sans MS', 'Marker Felt', cursive;
     cursor: grab;
     user-select: none;
     z-index: 100;
+    pointer-events: auto;
+    border-radius: 2px;
 }
 
 .sticky-note:active {
@@ -633,44 +573,43 @@ body::before {
 }
 
 .sticky-title {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.6rem;
-    color: #1a1a1a;
-    margin-bottom: 0.75rem;
-    line-height: 1.4;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    font-size: 1rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #333;
+    line-height: 1.3;
 }
 
 .sticky-content {
-    color: #2a2a2a;
-    line-height: 1.6;
     font-size: 0.85rem;
-    margin-bottom: 1rem;
-    min-height: 80px;
+    color: #444;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+    min-height: 50px;
 }
 
 .sticky-date {
     font-size: 0.7rem;
     color: #666;
-    text-transform: uppercase;
     position: absolute;
-    bottom: 1rem;
-    left: 1.5rem;
-    font-family: 'Share Tech Mono', monospace;
+    bottom: 0.75rem;
+    left: 1rem;
+    font-style: italic;
 }
 
 /* Windows 95 Style File Icons (Blog Posts) */
+/* Windows 95 Desktop Icons */
 .win95-file {
     display: flex;
     flex-direction: column;
     align-items: center;
-    padding: 0.5rem;
+    padding: 4px;
     width: 100px;
     cursor: pointer;
     user-select: none;
     position: absolute;
     z-index: 10;
+    pointer-events: auto;
 }
 
 .win95-file:hover .win95-icon-label {
