@@ -81,8 +81,9 @@ body {
 }
 
 .desktop-icon.dragging {
-    cursor: grabbing;
+    cursor: grabbing !important;
     opacity: 0.9;
+    pointer-events: none; /* Prevent interference during drag */
 }
 
 .desktop-icon-image {
@@ -836,12 +837,18 @@ body {
 
 /* Window Dragging */
 .win95-window.window-dragging {
-    opacity: 0.9;
+    opacity: 0.95;
     transition: none;
+    pointer-events: none; /* Prevent interference during drag */
+}
+
+.win95-window.window-dragging * {
+    pointer-events: none; /* Prevent child element interactions during drag */
 }
 
 .win95-window {
     transition: opacity 0.1s;
+    will-change: transform; /* Optimize for dragging */
 }
 
 /* Responsive */
