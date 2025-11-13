@@ -65,6 +65,16 @@ function setupEventListeners() {
     // Desktop icons
     fileManagerIcon.addEventListener('dblclick', () => openFileManager());
     
+    // Desktop icon selection
+    document.querySelectorAll('.desktop-icon').forEach(icon => {
+        icon.addEventListener('click', (e) => {
+            if (e.detail === 1) {
+                document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
+                icon.classList.add('selected');
+            }
+        });
+    });
+    
     // Start button handled below
     
     // File manager
@@ -100,11 +110,37 @@ function setupEventListeners() {
     cancelFileBtn?.addEventListener('click', hideFileEditor);
     deleteFileBtn?.addEventListener('click', handleDeleteFile);
     
-    // Click outside to close dialogs
-    window.addEventListener('click', (e) => {
+    // Click outside to close dialogs and clear selections
+    document.addEventListener('click', (e) => {
+        // Close login dialog if clicking outside
         if (e.target === loginDialog) {
             loginDialog.classList.add('hidden');
         }
+        
+        // Use setTimeout to let other click handlers process first
+        setTimeout(() => {
+            // Clear file selection if clicking on empty space in file manager or outside
+            const clickedFileItem = e.target.closest('.file-item');
+            const clickedInFileManager = e.target.closest('.file-manager-view');
+            const clickedOnFileList = e.target.closest('.file-list');
+            
+            // Clear if clicking on empty space in file manager or outside file manager entirely
+            if (clickedInFileManager && clickedOnFileList && !clickedFileItem) {
+                // Clicked on empty space in file list
+                document.querySelectorAll('.file-item').forEach(f => f.classList.remove('selected'));
+            } else if (!clickedInFileManager) {
+                // Clicked outside file manager entirely
+                document.querySelectorAll('.file-item').forEach(f => f.classList.remove('selected'));
+            }
+            
+            // Clear desktop icon selection if clicking on desktop background
+            const clickedDesktopIcon = e.target.closest('.desktop-icon');
+            const clickedOnDesktop = e.target.closest('.desktop-background');
+            const clickedOnWindow = e.target.closest('.win95-window');
+            if (clickedOnDesktop && !clickedDesktopIcon && !clickedOnWindow) {
+                document.querySelectorAll('.desktop-icon').forEach(icon => icon.classList.remove('selected'));
+            }
+        }, 0);
     });
 }
 
@@ -127,19 +163,16 @@ function positionDesktopIcon(icon, x, y) {
     icon.style.top = `${y}px`;
 }
 
-// Make desktop icon draggable with grid snapping
+// Make desktop icon draggable with grid snapping (realistic OS behavior)
 function makeDesktopIconDraggable(icon, iconId) {
     let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let initialLeft = 0;
-    let initialTop = 0;
     let offsetX = 0;
     let offsetY = 0;
-    let dragTimer = null;
-    let hasMoved = false;
+    let startX = 0;
+    let startY = 0;
+    let animationFrameId = null;
     const gridSize = 100; // Grid snap size
-    const dragThreshold = 5; // Pixels to move before starting drag
+    const dragThreshold = 4; // Pixels to move before starting drag (allows double-click)
     
     icon.addEventListener('mousedown', dragStart);
     
@@ -149,58 +182,52 @@ function makeDesktopIconDraggable(icon, iconId) {
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
         
-        // Get current position from style
-        initialLeft = parseFloat(icon.style.left) || 0;
-        initialTop = parseFloat(icon.style.top) || 0;
-        
-        // Get mouse position relative to viewport
+        // Store initial mouse position for threshold check
         startX = e.clientX;
         startY = e.clientY;
-        hasMoved = false;
         
-        // Set a timer to start dragging after a short delay
-        // This allows double-click to work
-        dragTimer = setTimeout(() => {
-            if (!hasMoved) {
-                isDragging = true;
-                icon.style.zIndex = '1000';
-                icon.style.cursor = 'grabbing';
-                icon.classList.add('dragging');
-            }
-        }, 150); // Small delay to allow double-click
+        // Add event listeners immediately
+        document.addEventListener('mousemove', handleMouseMove, { capture: true, passive: false });
+        document.addEventListener('mouseup', handleMouseUp, { capture: true });
         
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
         e.preventDefault();
         e.stopPropagation();
     }
     
-    function drag(e) {
+    function handleMouseMove(e) {
+        // Calculate distance moved from initial click
         const deltaX = Math.abs(e.clientX - startX);
         const deltaY = Math.abs(e.clientY - startY);
         
-        // Check if mouse has moved enough to start dragging
-        if (deltaX > dragThreshold || deltaY > dragThreshold) {
-            hasMoved = true;
-            if (dragTimer) {
-                clearTimeout(dragTimer);
-                dragTimer = null;
-            }
-            if (!isDragging) {
-                isDragging = true;
-                icon.style.zIndex = '1000';
-                icon.style.cursor = 'grabbing';
-                icon.classList.add('dragging');
-            }
+        // Start dragging only if moved beyond threshold (realistic OS behavior)
+        if (!isDragging && (deltaX > dragThreshold || deltaY > dragThreshold)) {
+            isDragging = true;
+            icon.style.zIndex = '1000';
+            icon.style.cursor = 'grabbing';
+            icon.classList.add('dragging');
+            resetScreensaverTimer();
         }
         
         if (!isDragging) return;
-        e.preventDefault();
         
-        // Calculate new position keeping the offset constant
-        // This ensures the cursor stays on the same spot of the icon
-        const newX = e.clientX - offsetX;
-        const newY = e.clientY - offsetY;
+        e.preventDefault();
+        e.stopPropagation();
+        
+        // Cancel any pending animation frame
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
+        
+        // Use requestAnimationFrame for smooth updates
+        animationFrameId = requestAnimationFrame(() => {
+            updateIconPosition(e.clientX, e.clientY);
+        });
+    }
+    
+    function updateIconPosition(mouseX, mouseY) {
+        // Calculate new position maintaining the offset
+        let newX = mouseX - offsetX;
+        let newY = mouseY - offsetY;
         
         // Keep within desktop bounds during drag
         const minX = 0;
@@ -208,23 +235,27 @@ function makeDesktopIconDraggable(icon, iconId) {
         const maxX = window.innerWidth - 80; // icon width
         const maxY = window.innerHeight - 80 - 30; // icon height + taskbar
         
-        const constrainedX = Math.max(minX, Math.min(maxX, newX));
-        const constrainedY = Math.max(minY, Math.min(maxY, newY));
+        newX = Math.max(minX, Math.min(maxX, newX));
+        newY = Math.max(minY, Math.min(maxY, newY));
         
-        icon.style.left = `${constrainedX}px`;
-        icon.style.top = `${constrainedY}px`;
+        // Update position immediately (smooth during drag)
+        icon.style.left = `${newX}px`;
+        icon.style.top = `${newY}px`;
     }
     
-    function dragEnd(e) {
-        if (dragTimer) {
-            clearTimeout(dragTimer);
-            dragTimer = null;
+    function handleMouseUp(e) {
+        // Cancel any pending animation
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
         }
         
+        // Remove event listeners
+        document.removeEventListener('mousemove', handleMouseMove, { capture: true });
+        document.removeEventListener('mouseup', handleMouseUp, { capture: true });
+        
         if (!isDragging) {
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('mouseup', dragEnd);
-            return;
+            return; // Was just a click, not a drag
         }
         
         isDragging = false;
@@ -235,7 +266,7 @@ function makeDesktopIconDraggable(icon, iconId) {
         let finalX = parseFloat(icon.style.left) || 0;
         let finalY = parseFloat(icon.style.top) || 0;
         
-        // Snap to grid only on release
+        // Snap to grid only on release (realistic OS behavior)
         finalX = Math.round(finalX / gridSize) * gridSize;
         finalY = Math.round(finalY / gridSize) * gridSize;
         
@@ -248,9 +279,15 @@ function makeDesktopIconDraggable(icon, iconId) {
         finalX = Math.max(minX, Math.min(maxX, finalX));
         finalY = Math.max(minY, Math.min(maxY, finalY));
         
-        // Apply snapped position
+        // Apply snapped position with smooth transition
+        icon.style.transition = 'left 0.1s ease-out, top 0.1s ease-out';
         icon.style.left = `${finalX}px`;
         icon.style.top = `${finalY}px`;
+        
+        // Remove transition after animation
+        setTimeout(() => {
+            icon.style.transition = '';
+        }, 100);
         
         // Save snapped position
         saveDesktopIconPosition(iconId, {
@@ -258,8 +295,7 @@ function makeDesktopIconDraggable(icon, iconId) {
             y: finalY
         });
         
-        document.removeEventListener('mousemove', drag);
-        document.removeEventListener('mouseup', dragEnd);
+        e.stopPropagation();
     }
 }
 
@@ -313,16 +349,15 @@ function makeWindowDraggable(window) {
     if (!titlebar) return;
     
     let isDragging = false;
-    let startX, startY, initialLeft, initialTop, offsetX, offsetY;
+    let offsetX = 0;
+    let offsetY = 0;
+    let animationFrameId = null;
     
     titlebar.addEventListener('mousedown', (e) => {
         // Don't drag if clicking on buttons
         if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
         
         resetScreensaverTimer();
-        
-        isDragging = true;
-        bringToFront(window);
         
         // Remove transform if present (for dialogs that start centered)
         if (window.style.transform && window.style.transform.includes('translate')) {
@@ -332,55 +367,90 @@ function makeWindowDraggable(window) {
             window.style.transform = 'none';
         }
         
-        // Calculate offset from click position to window's top-left
+        // Get window's current position
         const rect = window.getBoundingClientRect();
+        
+        // Calculate offset from click position to window's top-left corner
+        // This maintains the cursor position relative to the window
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
         
-        startX = e.clientX;
-        startY = e.clientY;
-        initialLeft = rect.left;
-        initialTop = rect.top;
+        // Bring window to front on click
+        bringToFront(window);
         
-        // Add dragging class for visual feedback
-        window.classList.add('window-dragging');
+        // Use capture phase to ensure we get all mouse events
+        document.addEventListener('mousemove', handleMouseMove, { capture: true, passive: false });
+        document.addEventListener('mouseup', handleMouseUp, { capture: true });
         
-        document.addEventListener('mousemove', dragWindow);
-        document.addEventListener('mouseup', stopDrag);
+        // Prevent default to avoid text selection
         e.preventDefault();
         e.stopPropagation();
     });
     
-    function dragWindow(e) {
-        if (!isDragging) return;
+    function handleMouseMove(e) {
+        // Start dragging on first mouse movement (realistic OS behavior)
+        if (!isDragging) {
+            isDragging = true;
+            window.classList.add('window-dragging');
+            resetScreensaverTimer();
+        }
         
-        // Calculate new position maintaining the offset
-        // This makes dragging feel more natural and responsive
-        const newX = e.clientX - offsetX;
-        const newY = e.clientY - offsetY;
+        e.preventDefault();
+        e.stopPropagation();
         
-        // Keep window within viewport bounds
-        const minX = 0;
-        const minY = 0;
-        const maxX = window.innerWidth - (window.offsetWidth || 300);
-        const maxY = window.innerHeight - 30 - (window.offsetHeight || 200); // Account for taskbar
+        // Cancel any pending animation frame
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+        }
         
-        const constrainedX = Math.max(minX, Math.min(maxX, newX));
-        const constrainedY = Math.max(minY, Math.min(maxY, newY));
-        
-        // Use transform for smoother rendering during drag
-        window.style.left = `${constrainedX}px`;
-        window.style.top = `${constrainedY}px`;
+        // Use requestAnimationFrame for smooth updates
+        animationFrameId = requestAnimationFrame(() => {
+            updateWindowPosition(e.clientX, e.clientY);
+        });
         
         resetScreensaverTimer();
     }
     
-    function stopDrag() {
+    function updateWindowPosition(mouseX, mouseY) {
+        // Calculate new position maintaining the offset
+        let newX = mouseX - offsetX;
+        let newY = mouseY - offsetY;
+        
+        // Get window dimensions
+        const windowWidth = window.offsetWidth || 300;
+        const windowHeight = window.offsetHeight || 200;
+        
+        // Keep window within viewport bounds (allow partial off-screen like real OS)
+        const minX = -windowWidth + 50; // Allow most of window off-screen
+        const minY = 0;
+        const maxX = window.innerWidth - 50; // Keep at least 50px visible
+        const maxY = window.innerHeight - 30 - 50; // Account for taskbar
+        
+        newX = Math.max(minX, Math.min(maxX, newX));
+        newY = Math.max(minY, Math.min(maxY, newY));
+        
+        // Update position immediately
+        window.style.left = `${newX}px`;
+        window.style.top = `${newY}px`;
+    }
+    
+    function handleMouseUp(e) {
         if (!isDragging) return;
+        
         isDragging = false;
         window.classList.remove('window-dragging');
-        document.removeEventListener('mousemove', dragWindow);
-        document.removeEventListener('mouseup', stopDrag);
+        
+        // Cancel any pending animation
+        if (animationFrameId) {
+            cancelAnimationFrame(animationFrameId);
+            animationFrameId = null;
+        }
+        
+        // Remove event listeners
+        document.removeEventListener('mousemove', handleMouseMove, { capture: true });
+        document.removeEventListener('mouseup', handleMouseUp, { capture: true });
+        
+        e.stopPropagation();
     }
 }
 
