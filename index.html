@@ -3,25 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sid Site - Windows 95</title>
+    <title>Sid Site</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="scanlines"></div>
+    <!-- Screensaver -->
+    <div id="screensaver" class="screensaver hidden">
+        <pre id="screensaverContent" class="screensaver-content"></pre>
+    </div>
     <div class="screen-content">
         <!-- Desktop Background -->
         <div class="desktop-background">
             <!-- Desktop Icons -->
             <div class="desktop-icon" id="myComputerIcon">
                 <div class="desktop-icon-image">
-                    <div class="icon-computer"></div>
+                    <div class="icon-computer">
+                        <div class="icon-screen"></div>
+                        <div class="icon-base"></div>
+                    </div>
                 </div>
                 <div class="desktop-icon-label">My Computer</div>
             </div>
             
             <div class="desktop-icon" id="fileManagerIcon">
                 <div class="desktop-icon-image">
-                    <div class="icon-folder"></div>
+                    <div class="icon-folder">
+                        <div class="icon-folder-tab"></div>
+                        <div class="icon-folder-body"></div>
+                    </div>
                 </div>
                 <div class="desktop-icon-label">Files</div>
             </div>
