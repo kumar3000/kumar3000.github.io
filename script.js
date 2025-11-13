@@ -464,7 +464,10 @@ function createFileItem(file) {
     
     item.innerHTML = `
         <div class="file-item-icon">
-            <div class="icon-folder"></div>
+            <div class="icon-document">
+                <div class="icon-doc-page"></div>
+                <div class="icon-doc-corner"></div>
+            </div>
         </div>
         <div class="file-item-label">${escapeHtml(file.name)}</div>
     `;
