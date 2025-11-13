@@ -7,26 +7,18 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- Navigation -->
-    <nav class="navbar">
+    <!-- CRT Monitor Frame -->
+    <div class="crt-monitor">
+        <div class="crt-screen">
+            <div class="scanlines"></div>
+            <div class="screen-content">
+                <!-- Navigation -->
+                <nav class="navbar">
         <div class="nav-container">
             <h1 class="logo">ENTRY LOG</h1>
             <button id="adminBtn" class="admin-btn">ADMIN ACCESS</button>
         </div>
     </nav>
-
-    <!-- Admin Login Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>ADMIN AUTHENTICATION</h2>
-            <form id="loginForm">
-                <input type="password" id="password" placeholder="ENTER PASSWORD" required>
-                <button type="submit">AUTHENTICATE</button>
-                <p id="loginError" class="error-message"></p>
-            </form>
-        </div>
-    </div>
 
     <!-- Admin Panel (hidden by default) -->
     <div id="adminPanel" class="admin-panel hidden">
@@ -82,6 +74,38 @@
             </div>
         </div>
     </main>
+            </div>
+        </div>
+        <div class="crt-bezel-bottom">
+            <div class="crt-controls">
+                <div class="crt-button"></div>
+                <div class="crt-button"></div>
+                <div class="crt-button"></div>
+            </div>
+            <div class="crt-brand">ARSTOTZKA</div>
+        </div>
+    </div>
+
+    <!-- Admin Login Modal -->
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>ADMIN AUTHENTICATION</h2>
+            <form id="loginForm">
+                <input type="password" id="password" placeholder="ENTER PASSWORD" required>
+                <button type="submit">AUTHENTICATE</button>
+                <p id="loginError" class="error-message"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- Blog Post Viewer Modal -->
+    <div id="blogViewerModal" class="modal">
+        <div class="modal-content blog-viewer">
+            <span class="close-blog">&times;</span>
+            <div id="blogViewerContent"></div>
+        </div>
+    </div>
 
     <script src="script.js"></script>
 </body>

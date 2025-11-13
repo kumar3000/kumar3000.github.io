@@ -8,49 +8,194 @@
 }
 
 :root {
-    --bg-dark: #1a1a1a;
-    --bg-darker: #0d0d0d;
-    --bg-panel: #2a2a2a;
-    --bg-card: #1e1e1e;
-    --text-primary: #e0e0e0;
-    --text-secondary: #a0a0a0;
-    --text-muted: #666666;
+    --bg-dark: #0a1a0a;
+    --bg-darker: #051505;
+    --bg-panel: #1a2a1a;
+    --bg-card: #0f1f0f;
+    --text-primary: #b0ffb0;
+    --text-secondary: #90dd90;
+    --text-muted: #5a7a5a;
     --red-primary: #c41e3a;
     --red-dark: #8b1528;
     --red-light: #e63946;
     --stamp-red: #dc143c;
-    --border-color: #404040;
-    --border-light: #505050;
+    --border-color: #2a4a2a;
+    --border-light: #3a5a3a;
     --accent-yellow: #ffd700;
     --accent-green: #4a9b3a;
-    --shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.7);
+    --shadow: 0 4px 6px rgba(0, 0, 0, 0.8);
+    --shadow-lg: 0 8px 16px rgba(0, 0, 0, 0.9);
+    --crt-glow: rgba(0, 100, 0, 0.3);
 }
 
 body {
     font-family: 'Share Tech Mono', monospace;
-    background-color: var(--bg-darker);
+    background: #0a0a0a;
     color: var(--text-primary);
     line-height: 1.6;
-    background-image: 
+    min-height: 100vh;
+    margin: 0;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow-x: hidden;
+}
+
+/* CRT Monitor Frame */
+.crt-monitor {
+    width: 100%;
+    max-width: 1400px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+    border: 8px solid #2a2a2a;
+    border-radius: 8px;
+    box-shadow: 
+        0 0 0 4px #0a0a0a,
+        0 0 30px rgba(0, 0, 0, 0.8),
+        inset 0 0 20px rgba(0, 0, 0, 0.5);
+    padding: 20px;
+    position: relative;
+}
+
+.crt-screen {
+    background: #0a1a0a;
+    border: 3px inset #2a2a2a;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 
+        inset 0 0 50px rgba(0, 50, 0, 0.3),
+        0 0 20px rgba(0, 100, 0, 0.2);
+    min-height: calc(100vh - 120px);
+}
+
+/* CRT Scanlines Effect */
+.scanlines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+    );
+    pointer-events: none;
+    z-index: 1000;
+    animation: scanline 8s linear infinite;
+}
+
+@keyframes scanline {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(4px);
+    }
+}
+
+/* Screen Content */
+.screen-content {
+    position: relative;
+    z-index: 1;
+    background: 
         repeating-linear-gradient(
             0deg,
-            transparent,
-            transparent 2px,
-            rgba(40, 40, 40, 0.3) 2px,
-            rgba(40, 40, 40, 0.3) 4px
+            rgba(10, 26, 10, 0.95) 0%,
+            rgba(10, 26, 10, 0.95) 2px,
+            rgba(8, 22, 8, 0.95) 2px,
+            rgba(8, 22, 8, 0.95) 4px
+        ),
+        linear-gradient(
+            135deg,
+            rgba(5, 20, 5, 0.98) 0%,
+            rgba(8, 25, 8, 0.98) 50%,
+            rgba(5, 20, 5, 0.98) 100%
         );
-    min-height: 100vh;
+    min-height: 100%;
+    background-size: 100% 4px, 100% 100%;
+}
+
+/* CRT Screen Glow */
+.crt-screen::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(
+        ellipse at center,
+        transparent 0%,
+        rgba(0, 50, 0, 0.1) 50%,
+        transparent 100%
+    );
+    pointer-events: none;
+    z-index: 999;
+}
+
+/* CRT Bezel Bottom */
+.crt-bezel-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 20px;
+    background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+    border-top: 2px solid #0a0a0a;
+    margin-top: 10px;
+}
+
+.crt-controls {
+    display: flex;
+    gap: 10px;
+}
+
+.crt-button {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #3a3a3a;
+    border: 1px solid #0a0a0a;
+    box-shadow: 
+        inset 0 1px 2px rgba(255, 255, 255, 0.1),
+        0 1px 1px rgba(0, 0, 0, 0.5);
+}
+
+.crt-button:nth-child(1) {
+    background: #c41e3a;
+}
+
+.crt-button:nth-child(2) {
+    background: #ffd700;
+}
+
+.crt-button:nth-child(3) {
+    background: #4a9b3a;
+}
+
+.crt-brand {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.5rem;
+    color: #666;
+    letter-spacing: 2px;
+    text-shadow: 0 0 5px rgba(196, 30, 58, 0.3);
 }
 
 /* Navigation */
 .navbar {
-    background-color: var(--bg-dark);
-    border-bottom: 3px solid var(--red-primary);
-    box-shadow: var(--shadow);
+    background: linear-gradient(180deg, #1a2a1a 0%, #0f1f0f 100%);
+    border-bottom: 2px solid var(--red-primary);
+    border-top: 2px solid var(--red-primary);
+    box-shadow: 
+        var(--shadow),
+        inset 0 0 10px rgba(0, 0, 0, 0.5);
     position: sticky;
     top: 0;
     z-index: 100;
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
 }
 
 .nav-container {
@@ -68,7 +213,10 @@ body {
     color: var(--red-primary);
     text-transform: uppercase;
     letter-spacing: 2px;
-    text-shadow: 2px 2px 0px var(--bg-darker);
+    text-shadow: 
+        0 0 10px var(--red-primary),
+        2px 2px 0px var(--bg-darker);
+    filter: drop-shadow(0 0 3px var(--red-primary));
 }
 
 .admin-btn {
@@ -103,18 +251,58 @@ body {
 }
 
 .modal-content {
-    background-color: var(--bg-panel);
-    border: 3px solid var(--red-primary);
+    background: linear-gradient(135deg, #1a2a1a 0%, #0f1f0f 100%);
+    border: 3px inset var(--red-primary);
     margin: 15% auto;
     padding: 2rem;
     width: 90%;
     max-width: 400px;
-    box-shadow: var(--shadow-lg);
+    box-shadow: 
+        var(--shadow-lg),
+        inset 0 0 20px rgba(0, 0, 0, 0.7),
+        0 0 20px var(--crt-glow);
     position: relative;
     font-family: 'Share Tech Mono', monospace;
 }
 
-.close {
+.modal-content.blog-viewer {
+    max-width: 800px;
+    max-height: 80vh;
+    overflow-y: auto;
+    margin: 5% auto;
+}
+
+.blog-viewer-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 0.9rem;
+    color: var(--red-primary);
+    margin-bottom: 1rem;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    border-bottom: 2px solid var(--red-primary);
+    padding-bottom: 0.5rem;
+}
+
+.blog-viewer-date {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    margin-bottom: 1.5rem;
+    font-family: 'Share Tech Mono', monospace;
+}
+
+.blog-viewer-content {
+    color: var(--text-primary);
+    line-height: 1.8;
+    font-size: 1rem;
+    font-family: 'Share Tech Mono', monospace;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.close,
+.close-blog {
     color: var(--text-secondary);
     float: right;
     font-size: 32px;
@@ -124,9 +312,11 @@ body {
     right: 1rem;
     top: 1rem;
     line-height: 1;
+    z-index: 1001;
 }
 
-.close:hover {
+.close:hover,
+.close-blog:hover {
     color: var(--red-primary);
 }
 
@@ -189,22 +379,62 @@ body {
 
 /* Main Content */
 .main-content {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 2rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    position: relative;
+    min-height: calc(100vh - 80px);
+}
+
+.main-content::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        repeating-linear-gradient(
+            90deg,
+            transparent,
+            transparent 98px,
+            rgba(0, 50, 0, 0.03) 98px,
+            rgba(0, 50, 0, 0.03) 100px
+        ),
+        repeating-linear-gradient(
+            0deg,
+            transparent,
+            transparent 98px,
+            rgba(0, 50, 0, 0.03) 98px,
+            rgba(0, 50, 0, 0.03) 100px
+        );
+    pointer-events: none;
+    z-index: 0;
 }
 
 .container {
     width: 100%;
+    position: relative;
+    min-height: 100%;
+    padding: 0;
 }
 
 /* Filter Tabs */
 .filter-tabs {
     display: flex;
     gap: 0;
-    margin-bottom: 2rem;
-    border: 2px solid var(--border-color);
-    background-color: var(--bg-panel);
+    margin: 0;
+    border: 2px inset var(--border-color);
+    background: linear-gradient(180deg, #1a2a1a 0%, #0f1f0f 100%);
+    box-shadow: 
+        inset 0 0 10px rgba(0, 0, 0, 0.5),
+        0 0 5px var(--crt-glow);
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    z-index: 100;
+    max-width: 400px;
 }
 
 .tab-btn {
@@ -238,104 +468,207 @@ body {
 
 /* Posts Container */
 .posts-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 1.5rem;
-}
-
-.post-card {
-    background-color: var(--bg-card);
-    border: 3px solid var(--border-color);
-    padding: 1.5rem;
     position: relative;
-    transition: all 0.2s;
-    box-shadow: var(--shadow);
+    min-height: 100vh;
+    padding: 0;
+    z-index: 1;
+    overflow: visible;
 }
 
-.post-card::before {
+/* Windows 95 Files Container - removed, files are now absolute positioned */
+
+/* Sticky Notes (Short Posts) */
+.sticky-note {
+    background: linear-gradient(135deg, #ffeb3b 0%, #ffc107 100%);
+    padding: 1.5rem;
+    min-height: 200px;
+    width: 280px;
+    box-shadow: 
+        0 4px 8px rgba(0, 0, 0, 0.3),
+        0 0 0 1px rgba(0, 0, 0, 0.1) inset;
+    position: absolute;
+    transition: box-shadow 0.2s;
+    font-family: 'Share Tech Mono', monospace;
+    cursor: grab;
+    user-select: none;
+    z-index: 100;
+}
+
+.sticky-note:active {
+    cursor: grabbing;
+}
+
+.sticky-note:hover {
+    box-shadow: 
+        0 6px 12px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(0, 0, 0, 0.1) inset;
+    z-index: 1000;
+}
+
+.sticky-close {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    background: rgba(255, 0, 0, 0.7);
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    color: white;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+    z-index: 1001;
+    transition: background 0.2s;
+}
+
+.sticky-close:hover {
+    background: rgba(255, 0, 0, 1);
+    transform: scale(1.1);
+}
+
+.sticky-note::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
     right: 0;
-    height: 4px;
-    background-color: var(--red-primary);
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 30px 30px 0;
+    border-color: transparent rgba(0, 0, 0, 0.1) transparent transparent;
 }
 
-.post-card:hover {
-    border-color: var(--red-primary);
-    box-shadow: 0 0 15px rgba(196, 30, 58, 0.3);
-    transform: translateY(-2px);
-}
-
-.post-type {
-    display: inline-block;
-    padding: 0.25rem 0.75rem;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.7rem;
-    font-weight: bold;
-    text-transform: uppercase;
-    margin-bottom: 0.75rem;
-    letter-spacing: 1px;
-    border: 1px solid;
-}
-
-.post-type.post {
-    background-color: rgba(196, 30, 58, 0.2);
-    color: var(--red-light);
-    border-color: var(--red-primary);
-}
-
-.post-type.blog {
-    background-color: rgba(74, 155, 58, 0.2);
-    color: var(--accent-green);
-    border-color: var(--accent-green);
-}
-
-.post-title {
+.sticky-title {
     font-family: 'Press Start 2P', monospace;
-    font-size: 0.7rem;
-    font-weight: normal;
+    font-size: 0.6rem;
+    color: #1a1a1a;
     margin-bottom: 0.75rem;
-    color: var(--text-primary);
     line-height: 1.4;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
-.post-content {
-    color: var(--text-secondary);
+.sticky-content {
+    color: #2a2a2a;
+    line-height: 1.6;
+    font-size: 0.85rem;
     margin-bottom: 1rem;
-    line-height: 1.8;
-    font-size: 0.9rem;
-    display: -webkit-box;
-    -webkit-line-clamp: 4;
-    line-clamp: 4;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
+    min-height: 80px;
 }
 
-.post-date {
-    font-size: 0.75rem;
-    color: var(--text-muted);
+.sticky-date {
+    font-size: 0.7rem;
+    color: #666;
     text-transform: uppercase;
-    border-top: 1px solid var(--border-color);
-    padding-top: 0.75rem;
+    position: absolute;
+    bottom: 1rem;
+    left: 1.5rem;
     font-family: 'Share Tech Mono', monospace;
 }
 
-.post-card::after {
-    content: 'APPROVED';
+/* Windows 95 Style File Icons (Blog Posts) */
+.win95-file {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0.5rem;
+    width: 100px;
+    cursor: pointer;
+    user-select: none;
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.5rem;
-    color: var(--stamp-red);
-    opacity: 0.3;
-    transform: rotate(15deg);
-    pointer-events: none;
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+    z-index: 10;
+}
+
+.win95-file:hover .win95-icon-label {
+    background-color: #000080;
+    color: white;
+}
+
+.win95-file.selected .win95-icon-label {
+    background-color: #000080;
+    color: white;
+    outline: 1px dotted white;
+}
+
+.win95-file.dragging {
+    opacity: 0.8;
+}
+
+.win95-file:active:not(.dragging) .win95-icon {
+    transform: translate(1px, 1px);
+}
+
+.win95-icon {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.win95-icon-image {
+    width: 48px;
+    height: 48px;
+    background: linear-gradient(135deg, #c0c0c0 0%, #808080 100%);
+    border: 2px outset #c0c0c0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+    box-shadow: 
+        inset -1px -1px 0px #000,
+        inset 1px 1px 0px #fff;
+}
+
+.win95-doc-icon {
+    width: 32px;
+    height: 40px;
+    background: white;
+    border: 1px solid #000;
+    position: relative;
+    box-shadow: 1px 1px 0px #808080;
+}
+
+.win95-doc-icon::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-style: solid;
+    border-width: 0 8px 8px 0;
+    border-color: transparent #c0c0c0 transparent transparent;
+}
+
+.win95-doc-icon::after {
+    content: '';
+    position: absolute;
+    top: 6px;
+    left: 4px;
+    width: 20px;
+    height: 2px;
+    background: #000080;
+    box-shadow: 0 4px 0 #000080, 0 8px 0 #000080, 0 12px 0 #000080;
+}
+
+.win95-icon-label {
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    font-size: 11px;
+    color: white;
+    text-align: center;
+    padding: 2px 4px;
+    max-width: 120px;
+    word-wrap: break-word;
+    line-height: 1.2;
+    text-shadow: 1px 1px 0px rgba(0, 0, 0, 0.5);
+    white-space: normal;
+    overflow: visible;
+    text-overflow: clip;
 }
 
 .empty-state {
@@ -354,11 +687,18 @@ body {
 
 /* Admin Panel */
 .admin-panel {
-    background-color: var(--bg-panel);
-    border-bottom: 3px solid var(--red-primary);
+    background: linear-gradient(135deg, #1a2a1a 0%, #0f1f0f 100%);
+    border-bottom: 2px solid var(--red-primary);
+    border-top: 2px solid var(--red-primary);
+    border-left: 1px solid var(--border-color);
+    border-right: 1px solid var(--border-color);
     padding: 2rem;
     margin-bottom: 2rem;
-    border-top: 3px solid var(--red-primary);
+    box-shadow: 
+        inset 0 0 20px rgba(0, 0, 0, 0.5),
+        0 0 10px var(--crt-glow);
+    position: relative;
+    z-index: 1;
 }
 
 .admin-container {
@@ -643,7 +983,29 @@ body {
     }
 
     .posts-container {
-        grid-template-columns: 1fr;
+        min-height: auto;
+    }
+    
+    .crt-monitor {
+        padding: 10px;
+    }
+    
+    .crt-screen {
+        min-height: calc(100vh - 100px);
+    }
+    
+    .sticky-note {
+        width: 250px;
+        min-height: 180px;
+    }
+    
+    .win95-file {
+        width: 90px;
+    }
+    
+    .win95-icon-label {
+        max-width: 100px;
+        font-size: 10px;
     }
 
     .filter-tabs {
