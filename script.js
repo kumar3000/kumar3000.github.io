@@ -330,8 +330,10 @@ function createPostCard(post) {
 // Draggable functionality for sticky notes
 function makeStickyNoteDraggable(element, postId) {
     let isDragging = false;
-    let offsetX = 0;
-    let offsetY = 0;
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
     
     // Extract rotation from transform
     const match = element.style.transform.match(/rotate\(([^)]+)\)/);
@@ -342,25 +344,35 @@ function makeStickyNoteDraggable(element, postId) {
     function dragStart(e) {
         if (e.target.classList.contains('sticky-close')) return;
         
-        const rect = element.getBoundingClientRect();
-        offsetX = e.clientX - rect.left;
-        offsetY = e.clientY - rect.top;
+        // Get current position from style
+        initialLeft = parseFloat(element.style.left) || 0;
+        initialTop = parseFloat(element.style.top) || 0;
         
-        if (e.target === element || element.contains(e.target)) {
-            isDragging = true;
-            element.style.zIndex = '1000';
-            element.style.cursor = 'grabbing';
-            
-            document.addEventListener('mousemove', drag);
-            document.addEventListener('mouseup', dragEnd);
-        }
+        // Get mouse position relative to viewport
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        isDragging = true;
+        element.style.zIndex = '1000';
+        element.style.cursor = 'grabbing';
+        element.classList.add('dragging');
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        e.preventDefault();
     }
     
     function drag(e) {
         if (isDragging) {
             e.preventDefault();
-            const newX = e.clientX - offsetX;
-            const newY = e.clientY - offsetY;
+            
+            // Calculate movement delta
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            // Apply movement to initial position
+            const newX = initialLeft + deltaX;
+            const newY = initialTop + deltaY;
             
             element.style.left = `${newX}px`;
             element.style.top = `${newY}px`;
@@ -372,12 +384,16 @@ function makeStickyNoteDraggable(element, postId) {
         if (isDragging) {
             isDragging = false;
             element.style.cursor = 'grab';
+            element.classList.remove('dragging');
+            
+            // Get final position
+            const finalLeft = parseFloat(element.style.left) || 0;
+            const finalTop = parseFloat(element.style.top) || 0;
             
             // Save position
-            const rect = element.getBoundingClientRect();
             saveStickyNotePosition(postId, {
-                x: rect.left,
-                y: rect.top,
+                x: finalLeft,
+                y: finalTop,
                 rotation: rotation
             });
             
@@ -410,8 +426,10 @@ function closeStickyNote(postId) {
 // Draggable functionality for blog files with grid snapping
 function makeBlogFileDraggable(element, postId) {
     let isDragging = false;
-    let offsetX = 0;
-    let offsetY = 0;
+    let startX = 0;
+    let startY = 0;
+    let initialLeft = 0;
+    let initialTop = 0;
     const gridSize = 120; // Grid snap size
     
     element.addEventListener('mousedown', dragStart);
@@ -422,9 +440,13 @@ function makeBlogFileDraggable(element, postId) {
             return;
         }
         
-        const rect = element.getBoundingClientRect();
-        offsetX = e.clientX - rect.left;
-        offsetY = e.clientY - rect.top;
+        // Get current position from style
+        initialLeft = parseFloat(element.style.left) || 0;
+        initialTop = parseFloat(element.style.top) || 0;
+        
+        // Get mouse position relative to viewport
+        startX = e.clientX;
+        startY = e.clientY;
         
         isDragging = true;
         element.style.zIndex = '1000';
@@ -439,14 +461,16 @@ function makeBlogFileDraggable(element, postId) {
     function drag(e) {
         if (isDragging) {
             e.preventDefault();
-            let newX = e.clientX - offsetX;
-            let newY = e.clientY - offsetY;
             
-            // Snap to grid
-            newX = Math.round(newX / gridSize) * gridSize;
-            newY = Math.round(newY / gridSize) * gridSize;
+            // Calculate movement delta
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
             
-            // Keep within bounds
+            // Apply movement to initial position (smooth, no grid snapping)
+            let newX = initialLeft + deltaX;
+            let newY = initialTop + deltaY;
+            
+            // Keep within bounds during drag
             const minX = 20;
             const minY = 20;
             const maxX = window.innerWidth - 120;
@@ -466,11 +490,31 @@ function makeBlogFileDraggable(element, postId) {
             element.style.cursor = 'pointer';
             element.classList.remove('dragging');
             
-            // Save position
-            const rect = element.getBoundingClientRect();
+            // Get current position
+            let finalX = parseFloat(element.style.left) || 0;
+            let finalY = parseFloat(element.style.top) || 0;
+            
+            // Snap to grid only on release
+            finalX = Math.round(finalX / gridSize) * gridSize;
+            finalY = Math.round(finalY / gridSize) * gridSize;
+            
+            // Keep within bounds after snapping
+            const minX = 20;
+            const minY = 20;
+            const maxX = window.innerWidth - 120;
+            const maxY = window.innerHeight - 120;
+            
+            finalX = Math.max(minX, Math.min(maxX, finalX));
+            finalY = Math.max(minY, Math.min(maxY, finalY));
+            
+            // Apply snapped position
+            element.style.left = `${finalX}px`;
+            element.style.top = `${finalY}px`;
+            
+            // Save snapped position
             saveBlogFilePosition(postId, {
-                x: rect.left,
-                y: rect.top
+                x: finalX,
+                y: finalY
             });
             
             document.removeEventListener('mousemove', drag);
