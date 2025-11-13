@@ -77,6 +77,12 @@ body {
     user-select: none;
     text-align: center;
     z-index: 10;
+    transition: none;
+}
+
+.desktop-icon.dragging {
+    cursor: grabbing;
+    opacity: 0.9;
 }
 
 .desktop-icon-image {
