@@ -7,13 +7,10 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <!-- CRT Monitor Frame -->
-    <div class="crt-monitor">
-        <div class="crt-screen">
-            <div class="scanlines"></div>
-            <div class="screen-content">
-                <!-- Navigation -->
-                <nav class="navbar">
+    <div class="scanlines"></div>
+    <div class="screen-content">
+        <!-- Navigation -->
+        <nav class="navbar">
         <div class="nav-container">
             <h1 class="logo">ENTRY LOG</h1>
             <button id="adminBtn" class="admin-btn">ADMIN ACCESS</button>
@@ -59,7 +56,6 @@
             <!-- Filter Tabs -->
             <div class="filter-tabs">
                 <button class="tab-btn active" data-filter="all">ALL ENTRIES</button>
-                <button class="tab-btn" data-filter="post">POSTS</button>
                 <button class="tab-btn" data-filter="blog">BLOGS</button>
             </div>
 
@@ -74,15 +70,13 @@
             </div>
         </div>
     </main>
-            </div>
-        </div>
-        <div class="crt-bezel-bottom">
-            <div class="crt-controls">
-                <div class="crt-button"></div>
-                <div class="crt-button"></div>
-                <div class="crt-button"></div>
-            </div>
-            <div class="crt-brand">ARSTOTZKA</div>
+        
+        <!-- Desktop Taskbar -->
+        <div class="desktop-taskbar">
+            <button id="notesBtn" class="taskbar-btn notes-btn">
+                <span class="taskbar-icon">📝</span>
+                <span class="taskbar-label">NOTES</span>
+            </button>
         </div>
     </div>
 

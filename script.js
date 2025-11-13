@@ -28,17 +28,20 @@ const deletePostBtn = document.getElementById('deletePostBtn');
 const blogViewerModal = document.getElementById('blogViewerModal');
 const blogViewerContent = document.getElementById('blogViewerContent');
 const closeBlogModal = document.querySelector('.close-blog');
+const notesBtn = document.getElementById('notesBtn');
 
 // State
 let currentFilter = 'all';
 let editingPostId = null;
+let stickyNotesVisible = true;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkAdminStatus();
-    loadPosts();
     setupEventListeners();
     initializeSamplePosts();
+    loadPosts();
+    updateNotesButtonState();
 });
 
 // Event Listeners
@@ -73,6 +76,19 @@ function setupEventListeners() {
     
     if (closeBlogModal) {
         closeBlogModal.addEventListener('click', closeBlogViewer);
+    }
+    
+    // Notes button toggle
+    if (notesBtn) {
+        notesBtn.addEventListener('click', toggleStickyNotes);
+    }
+    
+    // Load sticky notes visibility state
+    const savedVisibility = localStorage.getItem('sticky_notes_visible');
+    if (savedVisibility !== null) {
+        stickyNotesVisible = savedVisibility === 'true';
+        updateStickyNotesVisibility();
+        updateNotesButtonState();
     }
 
     // Event delegation for admin post actions - set up after DOM is ready
@@ -199,11 +215,13 @@ function loadPosts() {
     shortPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
     blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
     
-    // Add sticky notes (absolute positioned)
-    shortPosts.forEach(post => {
-        const postCard = createPostCard(post);
-        postsContainer.appendChild(postCard);
-    });
+    // Add sticky notes (absolute positioned) - only if visible
+    if (stickyNotesVisible) {
+        shortPosts.forEach(post => {
+            const postCard = createPostCard(post);
+            postsContainer.appendChild(postCard);
+        });
+    }
     
     // Add file icons directly to posts container (absolute positioned)
     blogPosts.forEach(post => {
@@ -530,6 +548,41 @@ function getBlogFilePosition(postId) {
 
 function saveBlogFilePosition(postId, position) {
     localStorage.setItem(`blog_file_pos_${postId}`, JSON.stringify(position));
+}
+
+// Toggle sticky notes visibility
+function toggleStickyNotes() {
+    stickyNotesVisible = !stickyNotesVisible;
+    updateStickyNotesVisibility();
+    updateNotesButtonState();
+    localStorage.setItem('sticky_notes_visible', stickyNotesVisible.toString());
+}
+
+function updateStickyNotesVisibility() {
+    const posts = getPosts();
+    const shortPosts = posts.filter(p => p.type === 'post');
+    
+    // Remove all existing sticky notes
+    document.querySelectorAll('.sticky-note').forEach(note => note.remove());
+    
+    // Add sticky notes if visible
+    if (stickyNotesVisible) {
+        shortPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+        shortPosts.forEach(post => {
+            const postCard = createPostCard(post);
+            postsContainer.appendChild(postCard);
+        });
+    }
+}
+
+function updateNotesButtonState() {
+    if (notesBtn) {
+        if (stickyNotesVisible) {
+            notesBtn.classList.add('active');
+        } else {
+            notesBtn.classList.remove('active');
+        }
+    }
 }
 
 function loadAdminPosts() {
