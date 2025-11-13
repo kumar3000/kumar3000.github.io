@@ -30,51 +30,26 @@
 
 body {
     font-family: 'Share Tech Mono', monospace;
-    background: #0a0a0a;
+    background: #0a1a0a;
     color: var(--text-primary);
     line-height: 1.6;
     min-height: 100vh;
     margin: 0;
-    padding: 20px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    padding: 0;
     overflow-x: hidden;
-}
-
-/* CRT Monitor Frame */
-.crt-monitor {
-    width: 100%;
-    max-width: 1400px;
-    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
-    border: 8px solid #2a2a2a;
-    border-radius: 8px;
-    box-shadow: 
-        0 0 0 4px #0a0a0a,
-        0 0 30px rgba(0, 0, 0, 0.8),
-        inset 0 0 20px rgba(0, 0, 0, 0.5);
-    padding: 20px;
     position: relative;
-}
-
-.crt-screen {
-    background: #0a1a0a;
-    border: 3px inset #2a2a2a;
-    position: relative;
-    overflow: hidden;
     box-shadow: 
         inset 0 0 50px rgba(0, 50, 0, 0.3),
         0 0 20px rgba(0, 100, 0, 0.2);
-    min-height: calc(100vh - 120px);
 }
 
 /* CRT Scanlines Effect */
 .scanlines {
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100vw;
+    height: 100vh;
     background: repeating-linear-gradient(
         0deg,
         rgba(0, 0, 0, 0.15),
@@ -114,14 +89,15 @@ body {
             rgba(8, 25, 8, 0.98) 50%,
             rgba(5, 20, 5, 0.98) 100%
         );
-    min-height: 100%;
+    min-height: 100vh;
     background-size: 100% 4px, 100% 100%;
+    padding-bottom: 50px; /* Space for taskbar */
 }
 
 /* CRT Screen Glow */
-.crt-screen::before {
+body::before {
     content: '';
-    position: absolute;
+    position: fixed;
     top: 0;
     left: 0;
     right: 0;
@@ -136,52 +112,81 @@ body {
     z-index: 999;
 }
 
-/* CRT Bezel Bottom */
-.crt-bezel-bottom {
+/* Desktop Taskbar */
+.desktop-taskbar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 50px;
+    background: linear-gradient(180deg, #c0c0c0 0%, #808080 100%);
+    border-top: 2px outset #c0c0c0;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 15px 20px;
-    background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
-    border-top: 2px solid #0a0a0a;
-    margin-top: 10px;
+    padding: 0 10px;
+    gap: 5px;
+    z-index: 2000;
+    box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.5);
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
 }
 
-.crt-controls {
+.taskbar-btn {
     display: flex;
-    gap: 10px;
-}
-
-.crt-button {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background: #3a3a3a;
-    border: 1px solid #0a0a0a;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 5px 10px;
+    background: linear-gradient(180deg, #c0c0c0 0%, #a0a0a0 100%);
+    border: 2px outset #c0c0c0;
+    cursor: pointer;
+    min-width: 60px;
+    height: 40px;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    font-size: 10px;
+    color: #000;
+    transition: all 0.1s;
     box-shadow: 
-        inset 0 1px 2px rgba(255, 255, 255, 0.1),
-        0 1px 1px rgba(0, 0, 0, 0.5);
+        inset 1px 1px 0px #fff,
+        inset -1px -1px 0px #000;
 }
 
-.crt-button:nth-child(1) {
-    background: #c41e3a;
+.taskbar-btn:hover {
+    background: linear-gradient(180deg, #d0d0d0 0%, #b0b0b0 100%);
 }
 
-.crt-button:nth-child(2) {
-    background: #ffd700;
+.taskbar-btn:active,
+.taskbar-btn.active {
+    background: linear-gradient(180deg, #808080 0%, #606060 100%);
+    border: 2px inset #c0c0c0;
+    box-shadow: 
+        inset -1px -1px 0px #fff,
+        inset 1px 1px 0px #000;
 }
 
-.crt-button:nth-child(3) {
-    background: #4a9b3a;
+.taskbar-icon {
+    font-size: 16px;
+    line-height: 1;
+    margin-bottom: 2px;
 }
 
-.crt-brand {
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.5rem;
-    color: #666;
-    letter-spacing: 2px;
-    text-shadow: 0 0 5px rgba(196, 30, 58, 0.3);
+.taskbar-label {
+    font-size: 9px;
+    line-height: 1;
+    text-transform: uppercase;
+    font-weight: bold;
 }
+
+.notes-btn.active {
+    background: linear-gradient(180deg, #000080 0%, #000060 100%);
+    color: #fff;
+    border: 2px inset #000080;
+}
+
+.notes-btn.active:hover {
+    background: linear-gradient(180deg, #0000a0 0%, #000080 100%);
+}
+
+/* CRT Bezel Bottom - Removed, website is now the screen itself */
 
 /* Navigation */
 .navbar {
@@ -194,13 +199,12 @@ body {
     position: sticky;
     top: 0;
     z-index: 100;
-    border-left: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
+    width: 100%;
 }
 
 .nav-container {
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
     padding: 1rem 2rem;
     display: flex;
     justify-content: space-between;
@@ -384,7 +388,7 @@ body {
     padding: 0;
     background: transparent;
     position: relative;
-    min-height: calc(100vh - 80px);
+    min-height: calc(100vh - 80px - 50px);
 }
 
 .main-content::before {
@@ -690,8 +694,6 @@ body {
     background: linear-gradient(135deg, #1a2a1a 0%, #0f1f0f 100%);
     border-bottom: 2px solid var(--red-primary);
     border-top: 2px solid var(--red-primary);
-    border-left: 1px solid var(--border-color);
-    border-right: 1px solid var(--border-color);
     padding: 2rem;
     margin-bottom: 2rem;
     box-shadow: 
@@ -699,11 +701,13 @@ body {
         0 0 10px var(--crt-glow);
     position: relative;
     z-index: 1;
+    width: 100%;
 }
 
 .admin-container {
-    max-width: 1200px;
-    margin: 0 auto;
+    width: 100%;
+    margin: 0;
+    padding: 0 2rem;
 }
 
 .admin-container h2 {
@@ -986,13 +990,6 @@ body {
         min-height: auto;
     }
     
-    .crt-monitor {
-        padding: 10px;
-    }
-    
-    .crt-screen {
-        min-height: calc(100vh - 100px);
-    }
     
     .sticky-note {
         width: 250px;
