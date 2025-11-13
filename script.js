@@ -1,159 +1,303 @@
-// Admin password hash - This is the SHA-256 hash of your password
-// To change password: Use an online SHA-256 generator with your desired password
+// Admin password hash - SHA-256 hash of your password
 // Default password is 'admin123' - CHANGE THIS HASH!
 const ADMIN_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
 
 // Storage keys
-const STORAGE_KEY_POSTS = 'blog_posts';
+const STORAGE_KEY_FILES = 'blog_files';
 const STORAGE_KEY_ADMIN = 'admin_authenticated';
 
 // DOM Elements
-const adminBtn = document.getElementById('adminBtn');
-const loginModal = document.getElementById('loginModal');
+const fileManagerWindow = document.getElementById('fileManagerWindow');
+const fileManagerIcon = document.getElementById('fileManagerIcon');
+const fileList = document.getElementById('fileList');
+const fileCount = document.getElementById('fileCount');
+const fileViewerWindow = document.getElementById('fileViewerWindow');
+const fileViewerContent = document.getElementById('fileViewerContent');
+const adminPanel = document.getElementById('adminPanel');
+const loginDialog = document.getElementById('loginDialog');
 const loginForm = document.getElementById('loginForm');
 const passwordInput = document.getElementById('password');
 const loginError = document.getElementById('loginError');
-const closeModal = document.querySelector('.close');
-const adminPanel = document.getElementById('adminPanel');
+const startBtn = document.getElementById('startBtn');
+const taskbarTasks = document.getElementById('taskbarTasks');
+const trayTime = document.getElementById('trayTime');
+
+// Admin elements
 const logoutBtn = document.getElementById('logoutBtn');
-const newPostBtn = document.getElementById('newPostBtn');
-const postEditor = document.getElementById('postEditor');
-const postForm = document.getElementById('postForm');
-const desktopIcons = document.getElementById('desktopIcons');
-const stickyNotesContainer = document.getElementById('stickyNotesContainer');
-const adminPostsContainer = document.getElementById('adminPostsContainer');
+const newFileBtn = document.getElementById('newFileBtn');
+const fileEditor = document.getElementById('fileEditor');
+const fileForm = document.getElementById('fileForm');
+const fileName = document.getElementById('fileName');
+const fileContent = document.getElementById('fileContent');
+const cancelFileBtn = document.getElementById('cancelFileBtn');
+const deleteFileBtn = document.getElementById('deleteFileBtn');
+const adminFilesContainer = document.getElementById('adminFilesContainer');
 const editorTitle = document.getElementById('editorTitle');
-const deletePostBtn = document.getElementById('deletePostBtn');
-const blogViewerModal = document.getElementById('blogViewerModal');
-const blogViewerContent = document.getElementById('blogViewerContent');
-const closeBlogModal = document.querySelector('.close-blog');
-const notesBtn = document.getElementById('notesBtn');
-const adminTaskbarBtn = document.getElementById('adminBtn');
-const adminWindowClose = document.getElementById('adminWindowClose');
-const notesWindow = document.getElementById('notesWindow');
-const notesWindowClose = document.getElementById('notesWindowClose');
-const closedNotesContainer = document.getElementById('closedNotesContainer');
-const noClosedNotes = document.getElementById('noClosedNotes');
 
 // State
-let currentFilter = 'all';
-let editingPostId = null;
-let stickyNotesVisible = true;
 let isAdmin = false;
+let editingFileId = null;
+let openWindows = [];
+let zIndexCounter = 100;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkAdminStatus();
     setupEventListeners();
-    initializeSamplePosts();
-    loadPosts();
-    updateNotesButtonState();
+    initializeDesktopIcons();
+    initializeWindows();
+    loadFiles();
+    updateClock();
+    setInterval(updateClock, 1000);
+    
+    // Position file manager window
+    positionWindow(fileManagerWindow, 100, 100);
+    makeWindowDraggable(fileManagerWindow);
 });
 
 // Event Listeners
 function setupEventListeners() {
-    // Admin login - now triggered from taskbar button
-    if (adminTaskbarBtn) {
-        adminTaskbarBtn.addEventListener('click', () => {
-            if (!isAdmin) {
-                openLoginModal();
-            } else {
-                toggleAdminWindow();
-            }
-        });
-    }
+    // Desktop icons
+    fileManagerIcon.addEventListener('dblclick', () => openFileManager());
     
-    closeModal.addEventListener('click', closeLoginModal);
+    // Start button handled below
+    
+    // File manager
+    setupWindowControls(fileManagerWindow);
+    
+    // File viewer
+    setupWindowControls(fileViewerWindow);
+    
+    // Admin panel
+    setupWindowControls(adminPanel);
+    
+    // Login
     loginForm.addEventListener('submit', handleLogin);
-    logoutBtn.addEventListener('click', handleLogout);
-    newPostBtn.addEventListener('click', showNewPostEditor);
-    postForm.addEventListener('submit', handleSavePost);
-    cancelPostBtn.addEventListener('click', hidePostEditor);
-    deletePostBtn.addEventListener('click', handleDeletePost);
-    
-    if (adminWindowClose) {
-        adminWindowClose.addEventListener('click', () => {
-            adminPanel.classList.add('hidden');
-            if (adminTaskbarBtn) {
-                adminTaskbarBtn.classList.remove('active');
-            }
-        });
-    }
-    
-    // Removed filter tabs - desktop doesn't need them
-
-    // Close modals when clicking outside
-    window.addEventListener('click', (e) => {
-        if (e.target === loginModal) {
-            closeLoginModal();
-        }
-        if (e.target === blogViewerModal) {
-            closeBlogViewer();
-        }
+    document.getElementById('cancelLoginBtn')?.addEventListener('click', () => {
+        loginDialog.classList.add('hidden');
+        passwordInput.value = '';
+        loginError.textContent = '';
     });
     
-    if (closeBlogModal) {
-        closeBlogModal.addEventListener('click', closeBlogViewer);
-    }
+    // Admin actions
+    logoutBtn?.addEventListener('click', handleLogout);
+    newFileBtn?.addEventListener('click', showNewFileEditor);
+    fileForm?.addEventListener('submit', handleSaveFile);
+    cancelFileBtn?.addEventListener('click', hideFileEditor);
+    deleteFileBtn?.addEventListener('click', handleDeleteFile);
     
-    // Notes button - toggle notes visibility or open notes window
-    if (notesBtn) {
-        notesBtn.addEventListener('click', () => {
-            // If notes window is open, close it and toggle visibility
-            if (!notesWindow.classList.contains('hidden')) {
-                notesWindow.classList.add('hidden');
-                notesBtn.classList.remove('active');
-            } else {
-                // Open notes window to show closed notes
-                openNotesWindow();
-            }
-        });
-    }
-    
-    if (notesWindowClose) {
-        notesWindowClose.addEventListener('click', () => {
-            notesWindow.classList.add('hidden');
-            if (notesBtn) {
-                notesBtn.classList.remove('active');
-            }
-        });
-    }
-    
-    // Load sticky notes visibility state
-    const savedVisibility = localStorage.getItem('sticky_notes_visible');
-    if (savedVisibility !== null) {
-        stickyNotesVisible = savedVisibility === 'true';
-        updateStickyNotesVisibility();
-        updateNotesButtonState();
-    }
+    // Click outside to close dialogs
+    window.addEventListener('click', (e) => {
+        if (e.target === loginDialog) {
+            loginDialog.classList.add('hidden');
+        }
+    });
+}
 
-    // Event delegation for admin post actions - set up after DOM is ready
-    if (adminPostsContainer) {
-        adminPostsContainer.addEventListener('click', handleAdminPostAction);
+// Initialize Desktop Icons
+function initializeDesktopIcons() {
+    // Position desktop icons
+    positionDesktopIcon(fileManagerIcon, 20, 20);
+}
+
+function positionDesktopIcon(icon, x, y) {
+    icon.style.left = `${x}px`;
+    icon.style.top = `${y}px`;
+}
+
+// Window Management
+function initializeWindows() {
+    // Set initial window positions
+    positionWindow(fileManagerWindow, 100, 100);
+    positionWindow(fileViewerWindow, 150, 150);
+    positionWindow(adminPanel, 200, 200);
+}
+
+function positionWindow(window, x, y) {
+    window.style.left = `${x}px`;
+    window.style.top = `${y}px`;
+    window.style.width = '600px';
+    window.style.height = '400px';
+}
+
+function setupWindowControls(window) {
+    const titlebar = window.querySelector('.win95-window-titlebar');
+    const minimizeBtn = window.querySelector('.win95-window-minimize');
+    const maximizeBtn = window.querySelector('.win95-window-maximize');
+    const closeBtn = window.querySelector('.win95-window-close');
+    
+    if (minimizeBtn) {
+        minimizeBtn.addEventListener('click', () => minimizeWindow(window));
+    }
+    
+    if (maximizeBtn) {
+        maximizeBtn.addEventListener('click', () => maximizeWindow(window));
+    }
+    
+    if (closeBtn) {
+        closeBtn.addEventListener('click', () => closeWindow(window));
     }
 }
 
-// Handle clicks on admin post action buttons
-function handleAdminPostAction(e) {
-    // Check if the clicked element or its parent is a button with data-action
-    const button = e.target.closest('button[data-action]');
-    if (!button) return;
+function makeWindowDraggable(window) {
+    const titlebar = window.querySelector('.win95-window-titlebar');
+    if (!titlebar) return;
     
-    const postId = button.getAttribute('data-post-id');
-    const action = button.getAttribute('data-action');
+    let isDragging = false;
+    let startX, startY, initialLeft, initialTop;
     
-    if (!postId || !action) {
+    titlebar.addEventListener('mousedown', (e) => {
+        // Don't drag if clicking on buttons
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        
+        isDragging = true;
+        bringToFront(window);
+        
+        startX = e.clientX;
+        startY = e.clientY;
+        const rect = window.getBoundingClientRect();
+        initialLeft = rect.left;
+        initialTop = rect.top;
+        
+        document.addEventListener('mousemove', dragWindow);
+        document.addEventListener('mouseup', stopDrag);
+        e.preventDefault();
+    });
+    
+    function dragWindow(e) {
+        if (!isDragging) return;
+        
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        window.style.left = `${initialLeft + deltaX}px`;
+        window.style.top = `${initialTop + deltaY}px`;
+    }
+    
+    function stopDrag() {
+        isDragging = false;
+        document.removeEventListener('mousemove', dragWindow);
+        document.removeEventListener('mouseup', stopDrag);
+    }
+}
+
+function bringToFront(window) {
+    zIndexCounter++;
+    window.style.zIndex = zIndexCounter;
+    updateTaskbar();
+}
+
+function minimizeWindow(window) {
+    window.classList.add('minimized');
+    updateTaskbar();
+}
+
+function maximizeWindow(window) {
+    if (window.classList.contains('maximized')) {
+        window.classList.remove('maximized');
+        positionWindow(window, 100, 100);
+    } else {
+        window.classList.add('maximized');
+    }
+    updateTaskbar();
+}
+
+function closeWindow(window) {
+    window.classList.add('hidden');
+    window.classList.remove('minimized', 'maximized');
+    updateTaskbar();
+}
+
+function openWindow(window) {
+    window.classList.remove('hidden', 'minimized');
+    bringToFront(window);
+    updateTaskbar();
+}
+
+function openFileManager() {
+    openWindow(fileManagerWindow);
+    loadFiles();
+}
+
+// File Management
+function getFiles() {
+    const filesJson = localStorage.getItem(STORAGE_KEY_FILES);
+    return filesJson ? JSON.parse(filesJson) : [];
+}
+
+function saveFiles(files) {
+    localStorage.setItem(STORAGE_KEY_FILES, JSON.stringify(files));
+}
+
+function loadFiles() {
+    const files = getFiles();
+    fileList.innerHTML = '';
+    
+    if (files.length === 0) {
+        fileList.innerHTML = '<div style="padding: 20px; text-align: center; color: #808080;">No files found</div>';
+        fileCount.textContent = '0 object(s)';
         return;
     }
     
-    e.preventDefault();
-    e.stopPropagation();
+    files.forEach(file => {
+        const fileItem = createFileItem(file);
+        fileList.appendChild(fileItem);
+    });
     
-    if (action === 'edit') {
-        editPost(postId);
-    } else if (action === 'delete') {
-        deletePostDirectly(postId);
-    }
+    fileCount.textContent = `${files.length} object(s)`;
+}
+
+function createFileItem(file) {
+    const item = document.createElement('div');
+    item.className = 'file-item';
+    item.dataset.fileId = file.id;
+    
+    const date = new Date(file.date);
+    const formattedDate = date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+    
+    item.innerHTML = `
+        <div class="file-item-icon">
+            <div class="icon-folder"></div>
+        </div>
+        <div class="file-item-label">${escapeHtml(file.name)}</div>
+    `;
+    
+    // Single click to select
+    item.addEventListener('click', (e) => {
+        if (e.detail === 1) {
+            document.querySelectorAll('.file-item').forEach(f => f.classList.remove('selected'));
+            item.classList.add('selected');
+        }
+    });
+    
+    // Double click to open
+    item.addEventListener('dblclick', () => {
+        openFile(file);
+    });
+    
+    return item;
+}
+
+function openFile(file) {
+    const date = new Date(file.date);
+    const formattedDate = date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    fileViewerContent.innerHTML = `
+        <h1>${escapeHtml(file.name)}</h1>
+        <div class="file-date">Created: ${formattedDate}</div>
+        <div style="white-space: pre-wrap; line-height: 1.6;">${escapeHtml(file.content)}</div>
+    `;
+    
+    openWindow(fileViewerWindow);
+    makeWindowDraggable(fileViewerWindow);
 }
 
 // Admin Functions
@@ -161,33 +305,8 @@ function checkAdminStatus() {
     const isAuthenticated = localStorage.getItem(STORAGE_KEY_ADMIN) === 'true';
     if (isAuthenticated) {
         isAdmin = true;
-        if (adminTaskbarBtn) {
-            adminTaskbarBtn.classList.remove('hidden');
-        }
-        // Don't auto-show admin panel, user clicks taskbar button
+        // Admin button would appear in start menu
     }
-}
-
-function openLoginModal() {
-    loginModal.style.display = 'block';
-    passwordInput.focus();
-    loginError.textContent = '';
-}
-
-function closeLoginModal() {
-    loginModal.style.display = 'none';
-    passwordInput.value = '';
-    loginError.textContent = '';
-}
-
-// Hash function for password verification
-async function hashPassword(password) {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(password);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-    return hashHex;
 }
 
 async function handleLogin(e) {
@@ -199,15 +318,12 @@ async function handleLogin(e) {
     if (passwordHash === ADMIN_PASSWORD_HASH) {
         localStorage.setItem(STORAGE_KEY_ADMIN, 'true');
         isAdmin = true;
-        closeLoginModal();
-        showAdminPanel();
-        loadAdminPosts();
-        if (adminTaskbarBtn) {
-            adminTaskbarBtn.classList.remove('hidden');
-            adminTaskbarBtn.classList.add('active');
-        }
+        loginDialog.classList.add('hidden');
+        passwordInput.value = '';
+        loginError.textContent = '';
+        openAdminPanel();
     } else {
-        loginError.textContent = 'ACCESS DENIED. INCORRECT PASSWORD.';
+        loginError.textContent = 'Invalid password';
         passwordInput.value = '';
     }
 }
@@ -215,702 +331,137 @@ async function handleLogin(e) {
 function handleLogout() {
     localStorage.removeItem(STORAGE_KEY_ADMIN);
     isAdmin = false;
-    hideAdminPanel();
-    hidePostEditor();
-    if (adminTaskbarBtn) {
-        adminTaskbarBtn.classList.add('hidden');
-        adminTaskbarBtn.classList.remove('active');
-    }
+    closeWindow(adminPanel);
+    hideFileEditor();
 }
 
-function showAdminPanel() {
-    adminPanel.classList.remove('hidden');
-    loadAdminPosts();
-    if (adminTaskbarBtn) {
-        adminTaskbarBtn.classList.add('active');
-    }
+function openAdminPanel() {
+    openWindow(adminPanel);
+    makeWindowDraggable(adminPanel);
+    loadAdminFiles();
 }
 
-function hideAdminPanel() {
-    adminPanel.classList.add('hidden');
-    if (adminTaskbarBtn) {
-        adminTaskbarBtn.classList.remove('active');
-    }
+function showNewFileEditor() {
+    editingFileId = null;
+    editorTitle.textContent = 'Create New File';
+    fileName.value = '';
+    fileContent.value = '';
+    deleteFileBtn.classList.add('hidden');
+    fileEditor.classList.remove('hidden');
 }
 
-function toggleAdminWindow() {
-    if (adminPanel.classList.contains('hidden')) {
-        showAdminPanel();
-    } else {
-        hideAdminPanel();
-    }
+function hideFileEditor() {
+    fileEditor.classList.add('hidden');
+    editingFileId = null;
 }
 
-// Post Management
-function getPosts() {
-    const postsJson = localStorage.getItem(STORAGE_KEY_POSTS);
-    return postsJson ? JSON.parse(postsJson) : [];
-}
-
-function savePosts(posts) {
-    localStorage.setItem(STORAGE_KEY_POSTS, JSON.stringify(posts));
-}
-
-function loadPosts() {
-    const posts = getPosts();
+function handleSaveFile(e) {
+    e.preventDefault();
     
-    // Clear containers
-    desktopIcons.innerHTML = '';
-    stickyNotesContainer.innerHTML = '';
+    const name = fileName.value.trim();
+    const content = fileContent.value.trim();
     
-    // Separate posts and blogs
-    const shortPosts = posts.filter(p => p.type === 'post');
-    const blogPosts = posts.filter(p => p.type === 'blog');
-    
-    // Sort by date (newest first)
-    shortPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-    blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-    
-    // Add sticky notes - only if visible and not closed
-    if (stickyNotesVisible) {
-        shortPosts.forEach(post => {
-            // Check if note is closed (for non-admins)
-            const isClosed = localStorage.getItem(`sticky_closed_${post.id}`) === 'true';
-            if (!isClosed || isAdmin) {
-                const postCard = createPostCard(post);
-                stickyNotesContainer.appendChild(postCard);
-            }
-        });
-    }
-    
-    // Add file icons to desktop
-    blogPosts.forEach(post => {
-        const postCard = createPostCard(post);
-        desktopIcons.appendChild(postCard);
-    });
-}
-
-function createPostCard(post) {
-    const date = new Date(post.date);
-    const formattedDate = date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-    
-    if (post.type === 'post') {
-        // Sticky note style for short posts - draggable and closable
-        const card = document.createElement('div');
-        card.className = 'sticky-note';
-        card.dataset.postId = post.id;
-        card.style.position = 'absolute';
-        
-        // Restore saved position if exists, otherwise use random
-        const savedPos = getStickyNotePosition(post.id);
-        if (savedPos) {
-            card.style.left = `${savedPos.x}px`;
-            card.style.top = `${savedPos.y}px`;
-            card.style.transform = `rotate(${savedPos.rotation}deg)`;
-        } else {
-            // Random initial position on desktop
-            const randomX = Math.random() * (window.innerWidth - 280) + 20;
-            const randomY = Math.random() * (window.innerHeight - 250) + 20;
-            card.style.left = `${randomX}px`;
-            card.style.top = `${randomY}px`;
-            card.style.transform = `rotate(${(Math.random() * 8 - 4)}deg)`;
-        }
-        
-        card.innerHTML = `
-            <button class="sticky-close" data-post-id="${post.id}">&times;</button>
-            <h3 class="sticky-title">${escapeHtml(post.title)}</h3>
-            <p class="sticky-content">${escapeHtml(post.content)}</p>
-            <span class="sticky-date">${formattedDate}</span>
-        `;
-        
-        // Make draggable
-        makeStickyNoteDraggable(card, post.id);
-        
-        // Add close button handler
-        const closeBtn = card.querySelector('.sticky-close');
-        closeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            closeStickyNote(post.id);
-        });
-        
-        return card;
-    } else {
-        // Windows 95/98 style file icon for blog posts - draggable desktop icon
-        const card = document.createElement('div');
-        card.className = 'win95-file';
-        card.dataset.postId = post.id;
-        card.style.position = 'absolute';
-        card.style.cursor = 'pointer';
-        
-        // Show full title - no truncation
-        const displayTitle = post.title;
-        
-        // Grid size for snapping (120px columns, 120px rows)
-        const gridSize = 120;
-        
-        // Restore saved position or use default grid position
-        const savedPos = getBlogFilePosition(post.id);
-        if (savedPos) {
-            card.style.left = `${savedPos.x}px`;
-            card.style.top = `${savedPos.y}px`;
-        } else {
-            // Default grid position based on index (desktop icon layout)
-            const blogPosts = getPosts().filter(p => p.type === 'blog');
-            const index = blogPosts.findIndex(p => p.id === post.id);
-            const cols = Math.floor((window.innerWidth - 100) / gridSize);
-            const col = index % cols;
-            const row = Math.floor(index / cols);
-            card.style.left = `${20 + col * gridSize}px`;
-            card.style.top = `${20 + row * gridSize}px`;
-        }
-        
-        card.innerHTML = `
-            <div class="win95-icon">
-                <div class="win95-icon-image">
-                    <div class="win95-doc-icon"></div>
-                </div>
-                <div class="win95-icon-label">${escapeHtml(displayTitle)}</div>
-            </div>
-        `;
-        
-        // Make draggable with grid snapping
-        makeBlogFileDraggable(card, post.id);
-        
-        // Single click to select, double click to open
-        let clickTimer = null;
-        card.addEventListener('click', (e) => {
-            if (clickTimer === null) {
-                clickTimer = setTimeout(() => {
-                    clickTimer = null;
-                    // Single click - just select (visual feedback)
-                    document.querySelectorAll('.win95-file').forEach(f => f.classList.remove('selected'));
-                    card.classList.add('selected');
-                }, 300);
-            }
-        });
-        
-        card.addEventListener('dblclick', (e) => {
-            if (clickTimer) {
-                clearTimeout(clickTimer);
-                clickTimer = null;
-            }
-            openBlogViewer(post);
-        });
-        
-        return card;
-    }
-}
-
-// Draggable functionality for sticky notes
-function makeStickyNoteDraggable(element, postId) {
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let initialLeft = 0;
-    let initialTop = 0;
-    
-    // Extract rotation from transform
-    const match = element.style.transform.match(/rotate\(([^)]+)\)/);
-    const rotation = match ? parseFloat(match[1]) : 0;
-    
-    element.addEventListener('mousedown', dragStart);
-    
-    function dragStart(e) {
-        if (e.target.classList.contains('sticky-close')) return;
-        
-        // Get current position from style
-        initialLeft = parseFloat(element.style.left) || 0;
-        initialTop = parseFloat(element.style.top) || 0;
-        
-        // Get mouse position relative to viewport
-        startX = e.clientX;
-        startY = e.clientY;
-        
-        isDragging = true;
-        element.style.zIndex = '1000';
-        element.style.cursor = 'grabbing';
-        element.classList.add('dragging');
-        
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
-        e.preventDefault();
-    }
-    
-    function drag(e) {
-        if (isDragging) {
-            e.preventDefault();
-            
-            // Calculate movement delta
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
-            
-            // Apply movement to initial position
-            const newX = initialLeft + deltaX;
-            const newY = initialTop + deltaY;
-            
-            element.style.left = `${newX}px`;
-            element.style.top = `${newY}px`;
-            element.style.transform = `rotate(${rotation}deg)`;
-        }
-    }
-    
-    function dragEnd(e) {
-        if (isDragging) {
-            isDragging = false;
-            element.style.cursor = 'grab';
-            element.classList.remove('dragging');
-            
-            // Get final position
-            const finalLeft = parseFloat(element.style.left) || 0;
-            const finalTop = parseFloat(element.style.top) || 0;
-            
-            // Save position
-            saveStickyNotePosition(postId, {
-                x: finalLeft,
-                y: finalTop,
-                rotation: rotation
-            });
-            
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('mouseup', dragEnd);
-        }
-    }
-}
-
-function getStickyNotePosition(postId) {
-    const saved = localStorage.getItem(`sticky_pos_${postId}`);
-    return saved ? JSON.parse(saved) : null;
-}
-
-function saveStickyNotePosition(postId, position) {
-    localStorage.setItem(`sticky_pos_${postId}`, JSON.stringify(position));
-}
-
-function closeStickyNote(postId) {
-    // For non-admins: just hide the note (close it)
-    // For admins: show delete confirmation
-    if (isAdmin) {
-        if (confirm('DELETE THIS NOTE PERMANENTLY?')) {
-            const posts = getPosts();
-            const filteredPosts = posts.filter(p => p.id !== postId);
-            savePosts(filteredPosts);
-            localStorage.removeItem(`sticky_pos_${postId}`);
-            localStorage.removeItem(`sticky_closed_${postId}`);
-            loadPosts();
-            loadAdminPosts();
-            // Refresh notes window if open
-            if (notesWindow && !notesWindow.classList.contains('hidden')) {
-                openNotesWindow();
-            }
-        }
-    } else {
-        // Just hide/close the note for non-admins
-        const note = document.querySelector(`.sticky-note[data-post-id="${postId}"]`);
-        if (note) {
-            note.style.display = 'none';
-            localStorage.setItem(`sticky_closed_${postId}`, 'true');
-        }
-    }
-}
-
-// Draggable functionality for blog files with grid snapping
-function makeBlogFileDraggable(element, postId) {
-    let isDragging = false;
-    let startX = 0;
-    let startY = 0;
-    let initialLeft = 0;
-    let initialTop = 0;
-    const gridSize = 120; // Grid snap size
-    
-    element.addEventListener('mousedown', dragStart);
-    
-    function dragStart(e) {
-        // Don't start drag on label clicks (allow text selection)
-        if (e.target.classList.contains('win95-icon-label')) {
-            return;
-        }
-        
-        // Get current position from style
-        initialLeft = parseFloat(element.style.left) || 0;
-        initialTop = parseFloat(element.style.top) || 0;
-        
-        // Get mouse position relative to viewport
-        startX = e.clientX;
-        startY = e.clientY;
-        
-        isDragging = true;
-        element.style.zIndex = '1000';
-        element.style.cursor = 'grabbing';
-        element.classList.add('dragging');
-        
-        document.addEventListener('mousemove', drag);
-        document.addEventListener('mouseup', dragEnd);
-        e.preventDefault();
-    }
-    
-    function drag(e) {
-        if (isDragging) {
-            e.preventDefault();
-            
-            // Calculate movement delta
-            const deltaX = e.clientX - startX;
-            const deltaY = e.clientY - startY;
-            
-            // Apply movement to initial position (smooth, no grid snapping)
-            let newX = initialLeft + deltaX;
-            let newY = initialTop + deltaY;
-            
-            // Keep within bounds during drag
-            const minX = 20;
-            const minY = 20;
-            const maxX = window.innerWidth - 120;
-            const maxY = window.innerHeight - 120;
-            
-            newX = Math.max(minX, Math.min(maxX, newX));
-            newY = Math.max(minY, Math.min(maxY, newY));
-            
-            element.style.left = `${newX}px`;
-            element.style.top = `${newY}px`;
-        }
-    }
-    
-    function dragEnd(e) {
-        if (isDragging) {
-            isDragging = false;
-            element.style.cursor = 'pointer';
-            element.classList.remove('dragging');
-            
-            // Get current position
-            let finalX = parseFloat(element.style.left) || 0;
-            let finalY = parseFloat(element.style.top) || 0;
-            
-            // Snap to grid only on release
-            finalX = Math.round(finalX / gridSize) * gridSize;
-            finalY = Math.round(finalY / gridSize) * gridSize;
-            
-            // Keep within bounds after snapping
-            const minX = 20;
-            const minY = 20;
-            const maxX = window.innerWidth - 120;
-            const maxY = window.innerHeight - 120;
-            
-            finalX = Math.max(minX, Math.min(maxX, finalX));
-            finalY = Math.max(minY, Math.min(maxY, finalY));
-            
-            // Apply snapped position
-            element.style.left = `${finalX}px`;
-            element.style.top = `${finalY}px`;
-            
-            // Save snapped position
-            saveBlogFilePosition(postId, {
-                x: finalX,
-                y: finalY
-            });
-            
-            document.removeEventListener('mousemove', drag);
-            document.removeEventListener('mouseup', dragEnd);
-        }
-    }
-}
-
-function getBlogFilePosition(postId) {
-    const saved = localStorage.getItem(`blog_file_pos_${postId}`);
-    return saved ? JSON.parse(saved) : null;
-}
-
-function saveBlogFilePosition(postId, position) {
-    localStorage.setItem(`blog_file_pos_${postId}`, JSON.stringify(position));
-}
-
-// Open notes window to show closed notes
-function openNotesWindow() {
-    const closedNotes = getClosedNotes();
-    
-    if (closedNotes.length === 0) {
-        noClosedNotes.classList.remove('hidden');
-        closedNotesContainer.innerHTML = '';
-    } else {
-        noClosedNotes.classList.add('hidden');
-        closedNotesContainer.innerHTML = '';
-        
-        closedNotes.forEach(note => {
-            const noteItem = document.createElement('div');
-            noteItem.className = 'closed-note-item';
-            noteItem.innerHTML = `
-                <div class="closed-note-info">
-                    <h4>${escapeHtml(note.title)}</h4>
-                    <p>${escapeHtml(note.content.substring(0, 50))}${note.content.length > 50 ? '...' : ''}</p>
-                </div>
-                <button class="reopen-note-btn" data-post-id="${note.id}">REOPEN</button>
-            `;
-            
-            const reopenBtn = noteItem.querySelector('.reopen-note-btn');
-            reopenBtn.addEventListener('click', () => {
-                reopenStickyNote(note.id);
-                openNotesWindow(); // Refresh the list
-            });
-            
-            closedNotesContainer.appendChild(noteItem);
-        });
-    }
-    
-    notesWindow.classList.remove('hidden');
-    if (notesBtn) {
-        notesBtn.classList.add('active');
-    }
-}
-
-function updateStickyNotesVisibility() {
-    const posts = getPosts();
-    const shortPosts = posts.filter(p => p.type === 'post');
-    
-    // Clear sticky notes container
-    stickyNotesContainer.innerHTML = '';
-    
-    // Add sticky notes if visible and not closed (unless admin)
-    if (stickyNotesVisible) {
-        shortPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
-        shortPosts.forEach(post => {
-            // Check if note is closed (for non-admins)
-            const isClosed = localStorage.getItem(`sticky_closed_${post.id}`) === 'true';
-            if (!isClosed || isAdmin) {
-                const postCard = createPostCard(post);
-                stickyNotesContainer.appendChild(postCard);
-            }
-        });
-    }
-}
-
-// Reopen closed sticky notes (for notes app)
-function reopenStickyNote(postId) {
-    localStorage.removeItem(`sticky_closed_${postId}`);
-    // Reload posts to show the reopened note
-    loadPosts();
-}
-
-// Get closed notes for notes app
-function getClosedNotes() {
-    const posts = getPosts();
-    const shortPosts = posts.filter(p => p.type === 'post');
-    return shortPosts.filter(post => {
-        return localStorage.getItem(`sticky_closed_${post.id}`) === 'true';
-    });
-}
-
-function updateNotesButtonState() {
-    // Notes button active state is now controlled by window visibility
-    // This function kept for compatibility but may not be needed
-}
-
-function loadAdminPosts() {
-    const posts = getPosts();
-    if (!adminPostsContainer) return;
-    
-    adminPostsContainer.innerHTML = '';
-    
-    if (posts.length === 0) {
-        adminPostsContainer.innerHTML = '<p style="color: var(--text-muted); text-transform: uppercase;">NO ENTRIES FOUND. CREATE YOUR FIRST ENTRY.</p>';
+    if (!name || !content) {
+        alert('Please fill in all fields');
         return;
     }
     
-    // Sort by date (newest first)
-    posts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    const files = getFiles();
     
-    posts.forEach(post => {
-        const postItem = document.createElement('div');
-        postItem.className = 'admin-post-item';
+    if (editingFileId) {
+        // Update existing file
+        const index = files.findIndex(f => f.id === editingFileId);
+        if (index !== -1) {
+            files[index].name = name;
+            files[index].content = content;
+            files[index].date = new Date().toISOString();
+        }
+    } else {
+        // Create new file
+        const newFile = {
+            id: Date.now().toString(),
+            name: name,
+            content: content,
+            date: new Date().toISOString()
+        };
+        files.push(newFile);
+    }
+    
+    saveFiles(files);
+    loadFiles();
+    loadAdminFiles();
+    hideFileEditor();
+}
+
+function handleDeleteFile() {
+    if (!editingFileId) return;
+    
+    if (confirm('Are you sure you want to delete this file?')) {
+        const files = getFiles();
+        const filteredFiles = files.filter(f => f.id !== editingFileId);
+        saveFiles(filteredFiles);
+        loadFiles();
+        loadAdminFiles();
+        hideFileEditor();
+    }
+}
+
+function loadAdminFiles() {
+    const files = getFiles();
+    adminFilesContainer.innerHTML = '';
+    
+    if (files.length === 0) {
+        adminFilesContainer.innerHTML = '<div style="padding: 20px; text-align: center; color: #808080;">No files</div>';
+        return;
+    }
+    
+    files.forEach(file => {
+        const item = document.createElement('div');
+        item.className = 'admin-file-item';
         
-        const date = new Date(post.date);
+        const date = new Date(file.date);
         const formattedDate = date.toLocaleDateString('en-US', { 
             year: 'numeric', 
-            month: 'long', 
+            month: 'short', 
             day: 'numeric' 
         });
         
-        // Use post ID directly (it should be safe, but we'll ensure it's a string)
-        const postIdStr = String(post.id);
-        
-        postItem.innerHTML = `
-            <div class="admin-post-content">
-                <h4>${escapeHtml(post.title)}</h4>
-                <p><span class="post-type ${post.type}">${post.type}</span></p>
-                <p style="font-size: 0.75rem; color: var(--text-light);">${formattedDate}</p>
+        item.innerHTML = `
+            <div>
+                <strong>${escapeHtml(file.name)}</strong>
+                <div style="font-size: 10px; color: #808080;">${formattedDate}</div>
             </div>
-            <div class="admin-post-actions">
-                <button class="edit-btn" data-post-id="${postIdStr}" data-action="edit" type="button">EDIT</button>
-                <button class="delete-btn-small" data-post-id="${postIdStr}" data-action="delete" type="button">DELETE</button>
+            <div class="admin-file-actions">
+                <button class="win95-btn" style="padding: 1px 8px; font-size: 10px; height: 20px;" onclick="editFile('${file.id}')">Edit</button>
             </div>
         `;
         
-        // Add click handler for the card (but not for buttons)
-        postItem.addEventListener('click', (e) => {
-            // Don't trigger edit if clicking on action buttons
-            if (!e.target.closest('.admin-post-actions')) {
-                editPost(post.id);
-            }
-        });
-        
-        adminPostsContainer.appendChild(postItem);
+        adminFilesContainer.appendChild(item);
     });
-    
-    // Ensure event listener is attached (in case it wasn't set up initially)
-    if (!adminPostsContainer.hasAttribute('data-listener-attached')) {
-        adminPostsContainer.addEventListener('click', handleAdminPostAction);
-        adminPostsContainer.setAttribute('data-listener-attached', 'true');
-    }
 }
 
-function showNewPostEditor() {
-    editingPostId = null;
-    editorTitle.textContent = 'CREATE NEW ENTRY';
-    document.getElementById('postTitle').value = '';
-    document.getElementById('postContent').value = '';
-    document.getElementById('postType').value = 'post';
-    deletePostBtn.classList.add('hidden');
-    postEditor.classList.remove('hidden');
-    postEditor.scrollIntoView({ behavior: 'smooth' });
+function editFile(fileId) {
+    const files = getFiles();
+    const file = files.find(f => f.id === fileId);
+    
+    if (!file) return;
+    
+    editingFileId = fileId;
+    editorTitle.textContent = 'Edit File';
+    fileName.value = file.name;
+    fileContent.value = file.content;
+    deleteFileBtn.classList.remove('hidden');
+    fileEditor.classList.remove('hidden');
 }
 
-function hidePostEditor() {
-    postEditor.classList.add('hidden');
-    editingPostId = null;
-}
-
-function editPost(postId) {
-    const posts = getPosts();
-    const post = posts.find(p => p.id === postId);
-    
-    if (!post) return;
-    
-    editingPostId = postId;
-    editorTitle.textContent = 'EDIT ENTRY';
-    document.getElementById('postTitle').value = post.title;
-    document.getElementById('postContent').value = post.content;
-    document.getElementById('postType').value = post.type;
-    deletePostBtn.classList.remove('hidden');
-    postEditor.classList.remove('hidden');
-    postEditor.scrollIntoView({ behavior: 'smooth' });
-}
-
-function handleSavePost(e) {
-    e.preventDefault();
-    
-    const title = document.getElementById('postTitle').value.trim();
-    const content = document.getElementById('postContent').value.trim();
-    const type = document.getElementById('postType').value;
-    
-    if (!title || !content) {
-        alert('ERROR: TITLE AND CONTENT REQUIRED.');
-        return;
-    }
-    
-    const posts = getPosts();
-    
-    if (editingPostId) {
-        // Update existing post
-        const index = posts.findIndex(p => p.id === editingPostId);
-        if (index !== -1) {
-            posts[index] = {
-                ...posts[index],
-                title,
-                content,
-                type,
-                date: posts[index].date // Keep original date
-            };
-        }
-    } else {
-        // Create new post
-        const newPost = {
-            id: Date.now().toString(),
-            title,
-            content,
-            type,
-            date: new Date().toISOString()
-        };
-        posts.push(newPost);
-    }
-    
-    savePosts(posts);
-    loadPosts();
-    loadAdminPosts();
-    hidePostEditor();
-}
-
-function handleDeletePost() {
-    if (!editingPostId) return;
-    
-    if (!confirm('DELETE ENTRY? This action cannot be undone.')) {
-        return;
-    }
-    
-    const posts = getPosts();
-    const filteredPosts = posts.filter(p => p.id !== editingPostId);
-    savePosts(filteredPosts);
-    loadPosts();
-    loadAdminPosts();
-    hidePostEditor();
-}
-
-function deletePostDirectly(postId) {
-    if (!postId) {
-        alert('ERROR: No post ID provided.');
-        return;
-    }
-    
-    // Convert to string for comparison
-    const postIdStr = String(postId);
-    
-    if (!confirm('DELETE ENTRY? This action cannot be undone.')) {
-        return;
-    }
-    
-    const posts = getPosts();
-    // Compare as strings to ensure we match correctly
-    const filteredPosts = posts.filter(p => String(p.id) !== postIdStr);
-    
-    if (filteredPosts.length === posts.length) {
-        // No post was removed, meaning the ID didn't match
-        alert('ERROR: Post not found. It may have already been deleted.');
-        loadAdminPosts(); // Refresh the list
-        return;
-    }
-    
-    savePosts(filteredPosts);
-    loadPosts();
-    loadAdminPosts();
-    
-    // If we were editing this post, hide the editor
-    if (String(editingPostId) === postIdStr) {
-        hidePostEditor();
-    }
-}
-
-// Blog Viewer Functions
-function openBlogViewer(post) {
-    const date = new Date(post.date);
-    const formattedDate = date.toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-    });
-    
-    blogViewerContent.innerHTML = `
-        <h2 class="blog-viewer-title">${escapeHtml(post.title)}</h2>
-        <p class="blog-viewer-date">${formattedDate}</p>
-        <div class="blog-viewer-content">${escapeHtml(post.content).replace(/\n/g, '<br>')}</div>
-    `;
-    
-    blogViewerModal.style.display = 'block';
-    document.body.style.overflow = 'hidden';
-}
-
-function closeBlogViewer() {
-    blogViewerModal.style.display = 'none';
-    document.body.style.overflow = '';
+// Password hashing
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
 }
 
 // Utility Functions
@@ -920,28 +471,65 @@ function escapeHtml(text) {
     return div.innerHTML;
 }
 
-// Initialize with sample posts (only if no posts exist)
-function initializeSamplePosts() {
-    const posts = getPosts();
-    if (posts.length === 0) {
-        const samplePosts = [
-            {
-                id: '1',
-                title: 'ENTRY APPROVED',
-                content: 'Welcome to the border checkpoint. All entries are subject to review. Glory to Arstotzka.',
-                type: 'blog',
-                date: new Date().toISOString()
-            },
-            {
-                id: '2',
-                title: 'DOCUMENTATION REQUIRED',
-                content: 'Please ensure all entries are properly documented. Incomplete entries will be rejected.',
-                type: 'post',
-                date: new Date(Date.now() - 86400000).toISOString() // Yesterday
-            }
-        ];
-        savePosts(samplePosts);
-        loadPosts();
-    }
+function updateClock() {
+    const now = new Date();
+    const hours = now.getHours();
+    const minutes = now.getMinutes();
+    const ampm = hours >= 12 ? 'PM' : 'AM';
+    const displayHours = hours % 12 || 12;
+    const displayMinutes = minutes.toString().padStart(2, '0');
+    trayTime.textContent = `${displayHours}:${displayMinutes} ${ampm}`;
 }
 
+function updateTaskbar() {
+    taskbarTasks.innerHTML = '';
+    
+    const windows = [
+        { window: fileManagerWindow, name: 'Files' },
+        { window: fileViewerWindow, name: 'File Viewer' },
+        { window: adminPanel, name: 'Administrator Panel' }
+    ];
+    
+    const visibleWindows = windows.filter(({ window }) => 
+        !window.classList.contains('hidden') && !window.classList.contains('minimized')
+    );
+    
+    const maxZIndex = Math.max(...visibleWindows.map(({ window }) => 
+        parseInt(window.style.zIndex) || 100
+    ));
+    
+    visibleWindows.forEach(({ window, name }) => {
+        const task = document.createElement('div');
+        task.className = 'taskbar-task';
+        const windowZIndex = parseInt(window.style.zIndex) || 100;
+        if (windowZIndex === maxZIndex) {
+            task.classList.add('active');
+        }
+        task.textContent = name;
+        task.addEventListener('click', () => {
+            if (window.classList.contains('minimized')) {
+                window.classList.remove('minimized');
+            }
+            bringToFront(window);
+        });
+        taskbarTasks.appendChild(task);
+    });
+}
+
+// Start button - open admin panel if admin, otherwise show login
+startBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    if (isAdmin) {
+        if (adminPanel.classList.contains('hidden')) {
+            openAdminPanel();
+        } else {
+            bringToFront(adminPanel);
+        }
+    } else {
+        loginDialog.classList.remove('hidden');
+        passwordInput.focus();
+    }
+});
+
+// Make editFile globally accessible
+window.editFile = editFile;

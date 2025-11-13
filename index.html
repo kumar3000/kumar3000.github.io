@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sid Site</title>
+    <title>Sid Site - Windows 95</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -11,106 +11,165 @@
     <div class="screen-content">
         <!-- Desktop Background -->
         <div class="desktop-background">
-            <!-- Desktop Icons Container -->
-            <div id="desktopIcons" class="desktop-icons">
-                <!-- Blog files will be dynamically inserted here -->
+            <!-- Desktop Icons -->
+            <div class="desktop-icon" id="myComputerIcon">
+                <div class="desktop-icon-image">
+                    <div class="icon-computer"></div>
+                </div>
+                <div class="desktop-icon-label">My Computer</div>
             </div>
             
-            <!-- Sticky Notes Container -->
-            <div id="stickyNotesContainer" class="sticky-notes-container">
-                <!-- Sticky notes will be dynamically inserted here -->
+            <div class="desktop-icon" id="fileManagerIcon">
+                <div class="desktop-icon-image">
+                    <div class="icon-folder"></div>
+                </div>
+                <div class="desktop-icon-label">Files</div>
             </div>
         </div>
 
-        <!-- Admin Panel Window (hidden by default) -->
+        <!-- File Manager Window -->
+        <div id="fileManagerWindow" class="win95-window">
+            <div class="win95-window-titlebar" id="fileManagerTitlebar">
+                <span class="win95-window-title">Files</span>
+                <div class="win95-window-controls">
+                    <button class="win95-window-minimize" title="Minimize">_</button>
+                    <button class="win95-window-maximize" title="Maximize">□</button>
+                    <button class="win95-window-close" title="Close">&times;</button>
+                </div>
+            </div>
+            <div class="win95-window-menu">
+                <div class="win95-menu-bar">
+                    <span class="win95-menu-item">File</span>
+                    <span class="win95-menu-item">Edit</span>
+                    <span class="win95-menu-item">View</span>
+                    <span class="win95-menu-item">Help</span>
+                </div>
+            </div>
+            <div class="win95-window-content file-manager-content">
+                <div class="file-manager-toolbar">
+                    <button class="win95-toolbar-btn" title="Up One Level">↑</button>
+                    <button class="win95-toolbar-btn" title="Cut">✂</button>
+                    <button class="win95-toolbar-btn" title="Copy">📋</button>
+                    <button class="win95-toolbar-btn" title="Paste">📄</button>
+                    <div class="win95-toolbar-separator"></div>
+                    <button class="win95-toolbar-btn" title="Undo">↶</button>
+                    <button class="win95-toolbar-btn" title="Delete">🗑</button>
+                    <div class="win95-toolbar-separator"></div>
+                    <button class="win95-toolbar-btn" title="Properties">ℹ</button>
+                </div>
+                <div class="file-manager-address">
+                    <span class="address-label">Address:</span>
+                    <div class="address-bar">C:\Files</div>
+                </div>
+                <div class="file-manager-view">
+                    <div id="fileList" class="file-list">
+                        <!-- Files will be dynamically inserted here -->
+                    </div>
+                </div>
+                <div class="file-manager-status">
+                    <span id="fileCount">0 object(s)</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- File Viewer Window -->
+        <div id="fileViewerWindow" class="win95-window hidden">
+            <div class="win95-window-titlebar" id="fileViewerTitlebar">
+                <span class="win95-window-title">File Viewer</span>
+                <div class="win95-window-controls">
+                    <button class="win95-window-minimize" title="Minimize">_</button>
+                    <button class="win95-window-maximize" title="Maximize">□</button>
+                    <button class="win95-window-close" title="Close">&times;</button>
+                </div>
+            </div>
+            <div class="win95-window-content file-viewer-content">
+                <div id="fileViewerContent" class="file-content">
+                    <!-- File content will be displayed here -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Admin Panel Window -->
         <div id="adminPanel" class="win95-window hidden">
-            <div class="win95-window-titlebar">
-                <span class="win95-window-title">ADMINISTRATOR PANEL</span>
-                <button class="win95-window-close" id="adminWindowClose">&times;</button>
+            <div class="win95-window-titlebar" id="adminPanelTitlebar">
+                <span class="win95-window-title">Administrator Panel</span>
+                <div class="win95-window-controls">
+                    <button class="win95-window-minimize" title="Minimize">_</button>
+                    <button class="win95-window-maximize" title="Maximize">□</button>
+                    <button class="win95-window-close" title="Close">&times;</button>
+                </div>
             </div>
             <div class="win95-window-content">
                 <div class="admin-container">
-                    <h2>ADMINISTRATOR PANEL</h2>
-                    <button id="logoutBtn" class="logout-btn">LOGOUT</button>
-                    <button id="newPostBtn" class="new-post-btn">+ NEW ENTRY</button>
+                    <div class="admin-header">
+                        <button id="logoutBtn" class="win95-btn">Logout</button>
+                        <button id="newFileBtn" class="win95-btn">New File</button>
+                    </div>
                     
-                    <!-- Post Editor -->
-                    <div id="postEditor" class="post-editor hidden">
-                        <h3 id="editorTitle">CREATE NEW ENTRY</h3>
-                        <form id="postForm">
-                            <input type="text" id="postTitle" placeholder="ENTRY TITLE" required>
-                            <textarea id="postContent" placeholder="ENTER DOCUMENTATION..." rows="10" required></textarea>
-                            <select id="postType">
-                                <option value="post">SHORT POST</option>
-                                <option value="blog">BLOG ENTRY</option>
-                            </select>
-                            <div class="editor-actions">
-                                <button type="submit" id="savePostBtn">APPROVE & SAVE</button>
-                                <button type="button" id="cancelPostBtn">CANCEL</button>
-                                <button type="button" id="deletePostBtn" class="delete-btn hidden">DELETE ENTRY</button>
+                    <!-- File Editor -->
+                    <div id="fileEditor" class="file-editor hidden">
+                        <h3 id="editorTitle">Create New File</h3>
+                        <form id="fileForm">
+                            <div class="form-group">
+                                <label>File Name:</label>
+                                <input type="text" id="fileName" placeholder="Enter file name..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>Content:</label>
+                                <textarea id="fileContent" placeholder="Enter file content..." rows="15" required></textarea>
+                            </div>
+                            <div class="form-actions">
+                                <button type="submit" class="win95-btn win95-btn-primary">Save</button>
+                                <button type="button" id="cancelFileBtn" class="win95-btn">Cancel</button>
+                                <button type="button" id="deleteFileBtn" class="win95-btn win95-btn-danger hidden">Delete</button>
                             </div>
                         </form>
                     </div>
 
-                    <!-- Posts List -->
-                    <div id="postsList" class="posts-list">
-                        <h3>ENTRY ARCHIVE</h3>
-                        <div id="adminPostsContainer"></div>
+                    <!-- Files List -->
+                    <div id="filesList" class="files-list">
+                        <h3>All Files</h3>
+                        <div id="adminFilesContainer" class="admin-files-container"></div>
                     </div>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Notes App Window -->
-        <div id="notesWindow" class="win95-window hidden">
-            <div class="win95-window-titlebar">
-                <span class="win95-window-title">NOTES</span>
-                <button class="win95-window-close" id="notesWindowClose">&times;</button>
-            </div>
-            <div class="win95-window-content">
-                <div class="notes-window-content">
-                    <h3>CLOSED NOTES</h3>
-                    <div id="closedNotesContainer" class="closed-notes-container"></div>
-                    <p id="noClosedNotes" class="no-closed-notes">NO CLOSED NOTES</p>
                 </div>
             </div>
         </div>
         
         <!-- Desktop Taskbar -->
         <div class="desktop-taskbar">
-            <button id="notesBtn" class="taskbar-btn notes-btn">
-                <span class="taskbar-icon">📝</span>
-                <span class="taskbar-label">NOTES</span>
+            <button id="startBtn" class="start-button">
+                <span class="start-icon">☰</span>
+                <span class="start-text">Start</span>
             </button>
-            <button id="adminBtn" class="taskbar-btn admin-taskbar-btn hidden">
-                <span class="taskbar-icon">⚙️</span>
-                <span class="taskbar-label">ADMIN</span>
-            </button>
+            <div class="taskbar-tasks" id="taskbarTasks">
+                <!-- Active windows will appear here -->
+            </div>
+            <div class="taskbar-tray">
+                <div class="tray-time" id="trayTime">12:00 PM</div>
+            </div>
         </div>
     </div>
 
-    <!-- Admin Login Modal -->
-    <div id="loginModal" class="modal">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <h2>ADMIN AUTHENTICATION</h2>
+    <!-- Admin Login Dialog -->
+    <div id="loginDialog" class="win95-dialog hidden">
+        <div class="dialog-titlebar">
+            <span>Administrator Login</span>
+        </div>
+        <div class="dialog-content">
             <form id="loginForm">
-                <input type="password" id="password" placeholder="ENTER PASSWORD" required>
-                <button type="submit">AUTHENTICATE</button>
+                <div class="form-group">
+                    <label>Password:</label>
+                    <input type="password" id="password" placeholder="Enter password..." required autofocus>
+                </div>
+                <div class="dialog-actions">
+                    <button type="submit" class="win95-btn win95-btn-primary">OK</button>
+                    <button type="button" id="cancelLoginBtn" class="win95-btn">Cancel</button>
+                </div>
                 <p id="loginError" class="error-message"></p>
             </form>
-        </div>
-    </div>
-
-    <!-- Blog Post Viewer Modal -->
-    <div id="blogViewerModal" class="modal">
-        <div class="modal-content blog-viewer">
-            <span class="close-blog">&times;</span>
-            <div id="blogViewerContent"></div>
         </div>
     </div>
 
     <script src="script.js"></script>
 </body>
 </html>
-
