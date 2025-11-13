@@ -46,9 +46,9 @@ let lastActivityTime = Date.now();
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
     checkAdminStatus();
-    setupEventListeners();
     initializeDesktopIcons();
     initializeWindows();
+    setupEventListeners(); // Set up event listeners after windows are initialized
     loadFiles();
     updateClock();
     setInterval(updateClock, 1000);
@@ -56,8 +56,9 @@ document.addEventListener('DOMContentLoaded', () => {
     resetScreensaverTimer();
     
     // Position file manager window
-    positionWindow(fileManagerWindow, 100, 100);
-    makeWindowDraggable(fileManagerWindow);
+    if (fileManagerWindow) {
+        positionWindow(fileManagerWindow, 100, 100);
+    }
 });
 
 // Event Listeners
@@ -312,9 +313,15 @@ function getDesktopIconPosition(iconId) {
 // Window Management
 function initializeWindows() {
     // Set initial window positions
-    positionWindow(fileManagerWindow, 100, 100);
-    positionWindow(fileViewerWindow, 150, 150);
-    positionWindow(adminPanel, 200, 200);
+    if (fileManagerWindow) {
+        positionWindow(fileManagerWindow, 100, 100);
+    }
+    if (fileViewerWindow) {
+        positionWindow(fileViewerWindow, 150, 150);
+    }
+    if (adminPanel) {
+        positionWindow(adminPanel, 200, 200);
+    }
 }
 
 function positionWindow(window, x, y) {
@@ -343,112 +350,134 @@ function setupWindowControls(window) {
     }
 }
 
-function makeWindowDraggable(window) {
-    // Support both window titlebars and dialog titlebars
-    const titlebar = window.querySelector('.win95-window-titlebar') || window.querySelector('.dialog-titlebar');
-    if (!titlebar) return;
+// Window Dragging System - Realistic OS behavior
+function makeWindowDraggable(windowElement) {
+    if (!windowElement) {
+        return;
+    }
     
+    // Support both window titlebars and dialog titlebars
+    const titlebar = windowElement.querySelector('.win95-window-titlebar') || 
+                     windowElement.querySelector('.dialog-titlebar');
+    
+    if (!titlebar) {
+        return;
+    }
+    
+    // Prevent duplicate initialization
+    if (windowElement.dataset.draggableInitialized === 'true') {
+        return;
+    }
+    windowElement.dataset.draggableInitialized = 'true';
+    
+    // Dragging state for this window
     let isDragging = false;
+    let startX = 0;
+    let startY = 0;
+    let initialX = 0;
+    let initialY = 0;
     let offsetX = 0;
     let offsetY = 0;
-    let animationFrameId = null;
     
-    titlebar.addEventListener('mousedown', (e) => {
+    // Handle mouse down on titlebar
+    titlebar.addEventListener('mousedown', onTitlebarMouseDown);
+    
+    function onTitlebarMouseDown(e) {
         // Don't drag if clicking on buttons
-        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) return;
+        if (e.target.tagName === 'BUTTON' || e.target.closest('button')) {
+            return;
+        }
+        
+        // Don't drag if clicking on window controls container
+        if (e.target.closest('.win95-window-controls')) {
+            return;
+        }
         
         resetScreensaverTimer();
         
-        // Remove transform if present (for dialogs that start centered)
-        if (window.style.transform && window.style.transform.includes('translate')) {
-            const rect = window.getBoundingClientRect();
-            window.style.left = `${rect.left}px`;
-            window.style.top = `${rect.top}px`;
-            window.style.transform = 'none';
+        // Handle centered dialogs
+        if (windowElement.style.transform && windowElement.style.transform.includes('translate')) {
+            const rect = windowElement.getBoundingClientRect();
+            windowElement.style.left = `${rect.left}px`;
+            windowElement.style.top = `${rect.top}px`;
+            windowElement.style.transform = 'none';
         }
         
-        // Get window's current position
-        const rect = window.getBoundingClientRect();
+        // Get current window position
+        const rect = windowElement.getBoundingClientRect();
+        initialX = rect.left;
+        initialY = rect.top;
         
-        // Calculate offset from click position to window's top-left corner
-        // This maintains the cursor position relative to the window
+        // Calculate offset from mouse to window top-left
         offsetX = e.clientX - rect.left;
         offsetY = e.clientY - rect.top;
         
-        // Bring window to front on click
-        bringToFront(window);
+        // Store mouse start position
+        startX = e.clientX;
+        startY = e.clientY;
         
-        // Use capture phase to ensure we get all mouse events
-        document.addEventListener('mousemove', handleMouseMove, { capture: true, passive: false });
-        document.addEventListener('mouseup', handleMouseUp, { capture: true });
+        // Bring window to front
+        bringToFront(windowElement);
         
-        // Prevent default to avoid text selection
+        // Add global event listeners
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        
+        // Prevent text selection and default behavior
         e.preventDefault();
         e.stopPropagation();
-    });
+    }
     
-    function handleMouseMove(e) {
-        // Start dragging on first mouse movement (realistic OS behavior)
-        if (!isDragging) {
+    function onMouseMove(e) {
+        // Calculate distance moved
+        const deltaX = e.clientX - startX;
+        const deltaY = e.clientY - startY;
+        
+        // Start dragging on any movement (realistic OS behavior)
+        if (!isDragging && (Math.abs(deltaX) > 1 || Math.abs(deltaY) > 1)) {
             isDragging = true;
-            window.classList.add('window-dragging');
+            windowElement.classList.add('window-dragging');
             resetScreensaverTimer();
         }
         
-        e.preventDefault();
-        e.stopPropagation();
-        
-        // Cancel any pending animation frame
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
+        if (!isDragging) {
+            return;
         }
         
-        // Use requestAnimationFrame for smooth updates
-        animationFrameId = requestAnimationFrame(() => {
-            updateWindowPosition(e.clientX, e.clientY);
-        });
-        
-        resetScreensaverTimer();
-    }
-    
-    function updateWindowPosition(mouseX, mouseY) {
-        // Calculate new position maintaining the offset
-        let newX = mouseX - offsetX;
-        let newY = mouseY - offsetY;
+        // Calculate new position
+        let newX = e.clientX - offsetX;
+        let newY = e.clientY - offsetY;
         
         // Get window dimensions
-        const windowWidth = window.offsetWidth || 300;
-        const windowHeight = window.offsetHeight || 200;
+        const windowWidth = windowElement.offsetWidth || 300;
+        const windowHeight = windowElement.offsetHeight || 200;
         
-        // Keep window within viewport bounds (allow partial off-screen like real OS)
-        const minX = -windowWidth + 50; // Allow most of window off-screen
+        // Constrain to viewport (allow partial off-screen like real OS)
+        const minX = -windowWidth + 50;
         const minY = 0;
-        const maxX = window.innerWidth - 50; // Keep at least 50px visible
+        const maxX = window.innerWidth - 50;
         const maxY = window.innerHeight - 30 - 50; // Account for taskbar
         
         newX = Math.max(minX, Math.min(maxX, newX));
         newY = Math.max(minY, Math.min(maxY, newY));
         
-        // Update position immediately
-        window.style.left = `${newX}px`;
-        window.style.top = `${newY}px`;
+        // Update position
+        windowElement.style.left = `${newX}px`;
+        windowElement.style.top = `${newY}px`;
+        
+        resetScreensaverTimer();
+        e.preventDefault();
     }
     
-    function handleMouseUp(e) {
-        if (!isDragging) return;
+    function onMouseUp(e) {
+        // Remove global listeners
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
         
-        isDragging = false;
-        window.classList.remove('window-dragging');
-        
-        // Cancel any pending animation
-        if (animationFrameId) {
-            cancelAnimationFrame(animationFrameId);
-            animationFrameId = null;
+        if (isDragging) {
+            isDragging = false;
+            windowElement.classList.remove('window-dragging');
         }
-        
-        // Remove event listeners
-        document.removeEventListener('mousemove', handleMouseMove, { capture: true });
-        document.removeEventListener('mouseup', handleMouseUp, { capture: true });
         
         e.stopPropagation();
     }
@@ -579,7 +608,7 @@ function openFile(file) {
     }
     
     openWindow(fileViewerWindow);
-    makeWindowDraggable(fileViewerWindow);
+    // Dragging is already set up in setupEventListeners
 }
 
 // Admin Functions
@@ -619,7 +648,7 @@ function handleLogout() {
 
 function openAdminPanel() {
     openWindow(adminPanel);
-    makeWindowDraggable(adminPanel);
+    // Dragging is already set up in setupEventListeners
     loadAdminFiles();
 }
 

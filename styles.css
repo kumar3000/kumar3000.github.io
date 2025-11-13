@@ -243,6 +243,11 @@ body {
     font-weight: bold;
     user-select: none;
     height: 18px;
+    position: relative;
+    z-index: 1;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
 }
 
 .win95-window-title {
@@ -250,6 +255,7 @@ body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    pointer-events: none; /* Allow clicks to pass through to titlebar */
 }
 
 .win95-window-controls {
@@ -839,16 +845,10 @@ body {
 .win95-window.window-dragging {
     opacity: 0.95;
     transition: none;
-    pointer-events: none; /* Prevent interference during drag */
-}
-
-.win95-window.window-dragging * {
-    pointer-events: none; /* Prevent child element interactions during drag */
 }
 
 .win95-window {
     transition: opacity 0.1s;
-    will-change: transform; /* Optimize for dragging */
 }
 
 /* Responsive */
