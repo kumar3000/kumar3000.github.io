@@ -186,6 +186,91 @@ body::before {
     background: linear-gradient(180deg, #0000a0 0%, #000080 100%);
 }
 
+.admin-taskbar-btn.active {
+    background: linear-gradient(180deg, #000080 0%, #000060 100%);
+    color: white;
+    border: 2px inset #000080;
+}
+
+.admin-taskbar-btn.active:hover {
+    background: linear-gradient(180deg, #0000a0 0%, #000080 100%);
+}
+
+/* Notes Window Content */
+.notes-window-content {
+    background: #c0c0c0;
+    padding: 1rem;
+    color: #000;
+}
+
+.notes-window-content h3 {
+    font-size: 12px;
+    font-weight: bold;
+    margin-bottom: 1rem;
+    color: #000;
+}
+
+.closed-notes-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    max-height: 60vh;
+    overflow-y: auto;
+}
+
+.closed-note-item {
+    background: #ffffff;
+    border: 1px inset #c0c0c0;
+    padding: 0.75rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+}
+
+.closed-note-info {
+    flex: 1;
+}
+
+.closed-note-info h4 {
+    font-size: 11px;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+    color: #000;
+}
+
+.closed-note-info p {
+    font-size: 10px;
+    color: #666;
+    margin: 0;
+}
+
+.reopen-note-btn {
+    background: #c0c0c0;
+    border: 2px outset #c0c0c0;
+    padding: 4px 12px;
+    font-size: 10px;
+    font-weight: bold;
+    cursor: pointer;
+    color: #000;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+}
+
+.reopen-note-btn:hover {
+    background: #d0d0d0;
+}
+
+.reopen-note-btn:active {
+    border: 2px inset #c0c0c0;
+}
+
+.no-closed-notes {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+    font-size: 11px;
+}
+
 /* CRT Bezel Bottom - Removed, website is now the screen itself */
 
 /* Navigation */
@@ -689,102 +774,154 @@ body::before {
     display: none !important;
 }
 
+/* Windows 95 Window Style */
+.win95-window {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%;
+    max-width: 800px;
+    max-height: 80vh;
+    background: #c0c0c0;
+    border: 2px outset #c0c0c0;
+    box-shadow: 
+        2px 2px 0px rgba(0, 0, 0, 0.5),
+        inset 1px 1px 0px #fff;
+    z-index: 1500;
+    display: flex;
+    flex-direction: column;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+}
+
+.win95-window-titlebar {
+    background: linear-gradient(180deg, #000080 0%, #000060 100%);
+    color: white;
+    padding: 4px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: move;
+    font-size: 11px;
+    font-weight: bold;
+    user-select: none;
+}
+
+.win95-window-title {
+    flex: 1;
+}
+
+.win95-window-close {
+    background: #c0c0c0;
+    border: 1px outset #c0c0c0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: bold;
+    color: #000;
+    padding: 0;
+    line-height: 1;
+}
+
+.win95-window-close:hover {
+    background: #ff0000;
+    color: white;
+}
+
+.win95-window-close:active {
+    border: 1px inset #c0c0c0;
+}
+
+.win95-window-content {
+    background: #c0c0c0;
+    padding: 8px;
+    flex: 1;
+    overflow-y: auto;
+    border: 2px inset #c0c0c0;
+}
+
 /* Admin Panel */
 .admin-panel {
-    background: linear-gradient(135deg, #1a2a1a 0%, #0f1f0f 100%);
-    border-bottom: 2px solid var(--red-primary);
-    border-top: 2px solid var(--red-primary);
-    padding: 2rem;
-    margin-bottom: 2rem;
-    box-shadow: 
-        inset 0 0 20px rgba(0, 0, 0, 0.5),
-        0 0 10px var(--crt-glow);
-    position: relative;
-    z-index: 1;
-    width: 100%;
+    /* Now uses win95-window class */
 }
 
 .admin-container {
     width: 100%;
     margin: 0;
-    padding: 0 2rem;
+    padding: 1rem;
+    background: #c0c0c0;
+    color: #000;
 }
 
 .admin-container h2 {
-    margin-bottom: 1.5rem;
-    color: var(--red-primary);
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    border-bottom: 2px solid var(--red-primary);
+    color: #000;
+    margin-bottom: 1rem;
+    font-size: 14px;
+    font-weight: bold;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    border-bottom: 2px solid #000;
     padding-bottom: 0.5rem;
 }
 
 .logout-btn {
-    background-color: var(--red-dark);
-    color: var(--text-primary);
-    border: 2px solid var(--red-primary);
-    padding: 0.5rem 1.5rem;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.9rem;
+    background: #c0c0c0;
+    border: 2px outset #c0c0c0;
+    padding: 4px 12px;
+    font-size: 11px;
     font-weight: bold;
-    text-transform: uppercase;
-    margin-bottom: 1rem;
     cursor: pointer;
-    transition: all 0.2s;
+    color: #000;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    margin-bottom: 1rem;
 }
 
 .logout-btn:hover {
-    background-color: var(--red-primary);
-    box-shadow: 0 0 10px var(--red-primary);
+    background: #d0d0d0;
+}
+
+.logout-btn:active {
+    border: 2px inset #c0c0c0;
 }
 
 .new-post-btn {
-    background-color: var(--accent-green);
-    color: var(--text-primary);
-    border: 2px solid var(--accent-green);
-    padding: 0.75rem 1.5rem;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1rem;
+    background: #c0c0c0;
+    border: 2px outset #c0c0c0;
+    padding: 6px 16px;
+    font-size: 11px;
     font-weight: bold;
-    text-transform: uppercase;
-    margin-bottom: 2rem;
     cursor: pointer;
-    transition: all 0.2s;
+    color: #000;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    margin-bottom: 1rem;
 }
 
 .new-post-btn:hover {
-    background-color: #5ab548;
-    box-shadow: 0 0 10px var(--accent-green);
+    background: #d0d0d0;
+}
+
+.new-post-btn:active {
+    border: 2px inset #c0c0c0;
 }
 
 /* Post Editor */
 .post-editor {
-    background-color: var(--bg-card);
-    border: 3px solid var(--border-color);
-    padding: 2rem;
-    margin-bottom: 2rem;
+    background: #c0c0c0;
+    border: 2px inset #c0c0c0;
+    padding: 1rem;
+    margin-bottom: 1rem;
     position: relative;
 }
 
-.post-editor::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background-color: var(--accent-green);
-}
-
 .post-editor h3 {
-    margin-bottom: 1.5rem;
-    color: var(--accent-green);
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    margin-bottom: 1rem;
+    color: #000;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    font-size: 12px;
+    font-weight: bold;
 }
 
 .post-editor form {
@@ -796,12 +933,12 @@ body::before {
 .post-editor input,
 .post-editor textarea,
 .post-editor select {
-    padding: 0.75rem;
-    background-color: var(--bg-dark);
-    border: 2px solid var(--border-color);
-    color: var(--text-primary);
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1rem;
+    padding: 4px;
+    background: #ffffff;
+    border: 2px inset #c0c0c0;
+    color: #000;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    font-size: 11px;
     border-radius: 0;
 }
 
@@ -809,8 +946,7 @@ body::before {
 .post-editor textarea:focus,
 .post-editor select:focus {
     outline: none;
-    border-color: var(--accent-green);
-    box-shadow: 0 0 5px var(--accent-green);
+    border: 2px inset #000080;
 }
 
 .post-editor textarea {
@@ -830,58 +966,55 @@ body::before {
 }
 
 .editor-actions button {
-    padding: 0.75rem 1.5rem;
-    border: 2px solid;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 1rem;
+    padding: 4px 12px;
+    border: 2px outset #c0c0c0;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    font-size: 11px;
     font-weight: bold;
-    text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.2s;
+    color: #000;
+    background: #c0c0c0;
+}
+
+.editor-actions button:hover {
+    background: #d0d0d0;
+}
+
+.editor-actions button:active {
+    border: 2px inset #c0c0c0;
 }
 
 #savePostBtn {
-    background-color: var(--accent-green);
-    color: var(--text-primary);
-    border-color: var(--accent-green);
-}
-
-#savePostBtn:hover {
-    background-color: #5ab548;
-    box-shadow: 0 0 10px var(--accent-green);
+    background: #c0c0c0;
+    color: #000;
 }
 
 #cancelPostBtn {
-    background-color: var(--bg-panel);
-    color: var(--text-secondary);
-    border-color: var(--border-color);
-}
-
-#cancelPostBtn:hover {
-    background-color: var(--bg-card);
-    color: var(--text-primary);
-    border-color: var(--text-secondary);
+    background: #c0c0c0;
+    color: #000;
 }
 
 .delete-btn {
-    background-color: var(--red-dark);
-    color: var(--text-primary);
-    border-color: var(--red-primary);
+    background: #c0c0c0;
+    color: #000;
+    border: 2px outset #c0c0c0;
 }
 
 .delete-btn:hover {
-    background-color: var(--red-primary);
-    box-shadow: 0 0 10px var(--red-primary);
+    background: #d0d0d0;
+}
+
+.delete-btn:active {
+    border: 2px inset #c0c0c0;
 }
 
 /* Posts List in Admin */
 .posts-list h3 {
     margin-bottom: 1rem;
-    color: var(--text-primary);
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: #000;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    font-size: 12px;
+    font-weight: bold;
 }
 
 #adminPostsContainer {
@@ -891,20 +1024,19 @@ body::before {
 }
 
 .admin-post-item {
-    background-color: var(--bg-card);
-    border: 2px solid var(--border-color);
-    padding: 1rem;
+    background: #ffffff;
+    border: 1px inset #c0c0c0;
+    padding: 0.75rem;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     gap: 1rem;
-    transition: all 0.2s;
     cursor: pointer;
+    margin-bottom: 0.5rem;
 }
 
 .admin-post-item:hover {
-    border-color: var(--red-primary);
-    box-shadow: 0 0 10px rgba(196, 30, 58, 0.3);
+    background: #e0e0e0;
 }
 
 .admin-post-content {
@@ -913,16 +1045,15 @@ body::before {
 
 .admin-post-content h4 {
     margin-bottom: 0.5rem;
-    color: var(--text-primary);
-    font-family: 'Press Start 2P', monospace;
-    font-size: 0.6rem;
-    line-height: 1.4;
-    text-transform: uppercase;
+    color: #000;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    font-size: 11px;
+    font-weight: bold;
 }
 
 .admin-post-content p {
-    font-size: 0.875rem;
-    color: var(--text-secondary);
+    font-size: 10px;
+    color: #666;
     margin-bottom: 0.5rem;
 }
 
@@ -936,14 +1067,14 @@ body::before {
 
 .edit-btn,
 .delete-btn-small {
-    padding: 0.5rem 1rem;
-    border: 2px solid;
-    font-family: 'Share Tech Mono', monospace;
-    font-size: 0.75rem;
+    padding: 3px 10px;
+    border: 2px outset #c0c0c0;
+    font-family: 'MS Sans Serif', 'Segoe UI', sans-serif;
+    font-size: 10px;
     font-weight: bold;
-    text-transform: uppercase;
     cursor: pointer;
-    transition: all 0.2s;
+    color: #000;
+    background: #c0c0c0;
     white-space: nowrap;
     position: relative;
     z-index: 20;
@@ -951,25 +1082,31 @@ body::before {
 }
 
 .edit-btn {
-    background-color: var(--accent-green);
-    color: var(--text-primary);
-    border-color: var(--accent-green);
+    background: #c0c0c0;
+    color: #000;
+    border: 2px outset #c0c0c0;
 }
 
 .edit-btn:hover {
-    background-color: #5ab548;
-    box-shadow: 0 0 8px var(--accent-green);
+    background: #d0d0d0;
+}
+
+.edit-btn:active {
+    border: 2px inset #c0c0c0;
 }
 
 .delete-btn-small {
-    background-color: var(--red-dark);
-    color: var(--text-primary);
-    border-color: var(--red-primary);
+    background: #c0c0c0;
+    color: #000;
+    border: 2px outset #c0c0c0;
 }
 
 .delete-btn-small:hover {
-    background-color: var(--red-primary);
-    box-shadow: 0 0 8px var(--red-primary);
+    background: #d0d0d0;
+}
+
+.delete-btn-small:active {
+    border: 2px inset #c0c0c0;
 }
 
 /* Responsive Design */

@@ -29,11 +29,18 @@ const blogViewerModal = document.getElementById('blogViewerModal');
 const blogViewerContent = document.getElementById('blogViewerContent');
 const closeBlogModal = document.querySelector('.close-blog');
 const notesBtn = document.getElementById('notesBtn');
+const adminTaskbarBtn = document.getElementById('adminBtn');
+const adminWindowClose = document.getElementById('adminWindowClose');
+const notesWindow = document.getElementById('notesWindow');
+const notesWindowClose = document.getElementById('notesWindowClose');
+const closedNotesContainer = document.getElementById('closedNotesContainer');
+const noClosedNotes = document.getElementById('noClosedNotes');
 
 // State
 let currentFilter = 'all';
 let editingPostId = null;
 let stickyNotesVisible = true;
+let isAdmin = false;
 
 // Initialize
 document.addEventListener('DOMContentLoaded', () => {
@@ -46,7 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Event Listeners
 function setupEventListeners() {
-    adminBtn.addEventListener('click', openLoginModal);
+    // Admin login - now triggered from taskbar button
+    if (adminTaskbarBtn) {
+        adminTaskbarBtn.addEventListener('click', () => {
+            if (!isAdmin) {
+                openLoginModal();
+            } else {
+                toggleAdminWindow();
+            }
+        });
+    }
+    
     closeModal.addEventListener('click', closeLoginModal);
     loginForm.addEventListener('submit', handleLogin);
     logoutBtn.addEventListener('click', handleLogout);
@@ -54,6 +71,15 @@ function setupEventListeners() {
     postForm.addEventListener('submit', handleSavePost);
     cancelPostBtn.addEventListener('click', hidePostEditor);
     deletePostBtn.addEventListener('click', handleDeletePost);
+    
+    if (adminWindowClose) {
+        adminWindowClose.addEventListener('click', () => {
+            adminPanel.classList.add('hidden');
+            if (adminTaskbarBtn) {
+                adminTaskbarBtn.classList.remove('active');
+            }
+        });
+    }
     
     filterTabs.forEach(tab => {
         tab.addEventListener('click', () => {
@@ -78,9 +104,27 @@ function setupEventListeners() {
         closeBlogModal.addEventListener('click', closeBlogViewer);
     }
     
-    // Notes button toggle
+    // Notes button - toggle notes visibility or open notes window
     if (notesBtn) {
-        notesBtn.addEventListener('click', toggleStickyNotes);
+        notesBtn.addEventListener('click', () => {
+            // If notes window is open, close it and toggle visibility
+            if (!notesWindow.classList.contains('hidden')) {
+                notesWindow.classList.add('hidden');
+                notesBtn.classList.remove('active');
+            } else {
+                // Open notes window to show closed notes
+                openNotesWindow();
+            }
+        });
+    }
+    
+    if (notesWindowClose) {
+        notesWindowClose.addEventListener('click', () => {
+            notesWindow.classList.add('hidden');
+            if (notesBtn) {
+                notesBtn.classList.remove('active');
+            }
+        });
     }
     
     // Load sticky notes visibility state
@@ -124,7 +168,11 @@ function handleAdminPostAction(e) {
 function checkAdminStatus() {
     const isAuthenticated = localStorage.getItem(STORAGE_KEY_ADMIN) === 'true';
     if (isAuthenticated) {
-        showAdminPanel();
+        isAdmin = true;
+        if (adminTaskbarBtn) {
+            adminTaskbarBtn.classList.remove('hidden');
+        }
+        // Don't auto-show admin panel, user clicks taskbar button
     }
 }
 
@@ -158,9 +206,14 @@ async function handleLogin(e) {
     
     if (passwordHash === ADMIN_PASSWORD_HASH) {
         localStorage.setItem(STORAGE_KEY_ADMIN, 'true');
+        isAdmin = true;
         closeLoginModal();
         showAdminPanel();
         loadAdminPosts();
+        if (adminTaskbarBtn) {
+            adminTaskbarBtn.classList.remove('hidden');
+            adminTaskbarBtn.classList.add('active');
+        }
     } else {
         loginError.textContent = 'ACCESS DENIED. INCORRECT PASSWORD.';
         passwordInput.value = '';
@@ -169,17 +222,36 @@ async function handleLogin(e) {
 
 function handleLogout() {
     localStorage.removeItem(STORAGE_KEY_ADMIN);
+    isAdmin = false;
     hideAdminPanel();
     hidePostEditor();
+    if (adminTaskbarBtn) {
+        adminTaskbarBtn.classList.add('hidden');
+        adminTaskbarBtn.classList.remove('active');
+    }
 }
 
 function showAdminPanel() {
     adminPanel.classList.remove('hidden');
     loadAdminPosts();
+    if (adminTaskbarBtn) {
+        adminTaskbarBtn.classList.add('active');
+    }
 }
 
 function hideAdminPanel() {
     adminPanel.classList.add('hidden');
+    if (adminTaskbarBtn) {
+        adminTaskbarBtn.classList.remove('active');
+    }
+}
+
+function toggleAdminWindow() {
+    if (adminPanel.classList.contains('hidden')) {
+        showAdminPanel();
+    } else {
+        hideAdminPanel();
+    }
 }
 
 // Post Management
@@ -215,11 +287,15 @@ function loadPosts() {
     shortPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
     blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
     
-    // Add sticky notes (absolute positioned) - only if visible
+    // Add sticky notes (absolute positioned) - only if visible and not closed
     if (stickyNotesVisible) {
         shortPosts.forEach(post => {
-            const postCard = createPostCard(post);
-            postsContainer.appendChild(postCard);
+            // Check if note is closed (for non-admins)
+            const isClosed = localStorage.getItem(`sticky_closed_${post.id}`) === 'true';
+            if (!isClosed || isAdmin) {
+                const postCard = createPostCard(post);
+                postsContainer.appendChild(postCard);
+            }
         });
     }
     
@@ -431,13 +507,29 @@ function saveStickyNotePosition(postId, position) {
 }
 
 function closeStickyNote(postId) {
-    if (confirm('DELETE THIS NOTE?')) {
-        const posts = getPosts();
-        const filteredPosts = posts.filter(p => p.id !== postId);
-        savePosts(filteredPosts);
-        localStorage.removeItem(`sticky_pos_${postId}`);
-        loadPosts();
-        loadAdminPosts();
+    // For non-admins: just hide the note (close it)
+    // For admins: show delete confirmation
+    if (isAdmin) {
+        if (confirm('DELETE THIS NOTE PERMANENTLY?')) {
+            const posts = getPosts();
+            const filteredPosts = posts.filter(p => p.id !== postId);
+            savePosts(filteredPosts);
+            localStorage.removeItem(`sticky_pos_${postId}`);
+            localStorage.removeItem(`sticky_closed_${postId}`);
+            loadPosts();
+            loadAdminPosts();
+            // Refresh notes window if open
+            if (notesWindow && !notesWindow.classList.contains('hidden')) {
+                openNotesWindow();
+            }
+        }
+    } else {
+        // Just hide/close the note for non-admins
+        const note = document.querySelector(`.sticky-note[data-post-id="${postId}"]`);
+        if (note) {
+            note.style.display = 'none';
+            localStorage.setItem(`sticky_closed_${postId}`, 'true');
+        }
     }
 }
 
@@ -550,12 +642,42 @@ function saveBlogFilePosition(postId, position) {
     localStorage.setItem(`blog_file_pos_${postId}`, JSON.stringify(position));
 }
 
-// Toggle sticky notes visibility
-function toggleStickyNotes() {
-    stickyNotesVisible = !stickyNotesVisible;
-    updateStickyNotesVisibility();
-    updateNotesButtonState();
-    localStorage.setItem('sticky_notes_visible', stickyNotesVisible.toString());
+// Open notes window to show closed notes
+function openNotesWindow() {
+    const closedNotes = getClosedNotes();
+    
+    if (closedNotes.length === 0) {
+        noClosedNotes.classList.remove('hidden');
+        closedNotesContainer.innerHTML = '';
+    } else {
+        noClosedNotes.classList.add('hidden');
+        closedNotesContainer.innerHTML = '';
+        
+        closedNotes.forEach(note => {
+            const noteItem = document.createElement('div');
+            noteItem.className = 'closed-note-item';
+            noteItem.innerHTML = `
+                <div class="closed-note-info">
+                    <h4>${escapeHtml(note.title)}</h4>
+                    <p>${escapeHtml(note.content.substring(0, 50))}${note.content.length > 50 ? '...' : ''}</p>
+                </div>
+                <button class="reopen-note-btn" data-post-id="${note.id}">REOPEN</button>
+            `;
+            
+            const reopenBtn = noteItem.querySelector('.reopen-note-btn');
+            reopenBtn.addEventListener('click', () => {
+                reopenStickyNote(note.id);
+                openNotesWindow(); // Refresh the list
+            });
+            
+            closedNotesContainer.appendChild(noteItem);
+        });
+    }
+    
+    notesWindow.classList.remove('hidden');
+    if (notesBtn) {
+        notesBtn.classList.add('active');
+    }
 }
 
 function updateStickyNotesVisibility() {
@@ -565,24 +687,39 @@ function updateStickyNotesVisibility() {
     // Remove all existing sticky notes
     document.querySelectorAll('.sticky-note').forEach(note => note.remove());
     
-    // Add sticky notes if visible
+    // Add sticky notes if visible and not closed (unless admin)
     if (stickyNotesVisible) {
         shortPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
         shortPosts.forEach(post => {
-            const postCard = createPostCard(post);
-            postsContainer.appendChild(postCard);
+            // Check if note is closed (for non-admins)
+            const isClosed = localStorage.getItem(`sticky_closed_${post.id}`) === 'true';
+            if (!isClosed || isAdmin) {
+                const postCard = createPostCard(post);
+                postsContainer.appendChild(postCard);
+            }
         });
     }
 }
 
+// Reopen closed sticky notes (for notes app)
+function reopenStickyNote(postId) {
+    localStorage.removeItem(`sticky_closed_${postId}`);
+    // Reload posts to show the reopened note
+    loadPosts();
+}
+
+// Get closed notes for notes app
+function getClosedNotes() {
+    const posts = getPosts();
+    const shortPosts = posts.filter(p => p.type === 'post');
+    return shortPosts.filter(post => {
+        return localStorage.getItem(`sticky_closed_${post.id}`) === 'true';
+    });
+}
+
 function updateNotesButtonState() {
-    if (notesBtn) {
-        if (stickyNotesVisible) {
-            notesBtn.classList.add('active');
-        } else {
-            notesBtn.classList.remove('active');
-        }
-    }
+    // Notes button active state is now controlled by window visibility
+    // This function kept for compatibility but may not be needed
 }
 
 function loadAdminPosts() {

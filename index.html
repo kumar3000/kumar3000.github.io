@@ -13,12 +13,16 @@
         <nav class="navbar">
         <div class="nav-container">
             <h1 class="logo">ENTRY LOG</h1>
-            <button id="adminBtn" class="admin-btn">ADMIN ACCESS</button>
         </div>
     </nav>
 
-    <!-- Admin Panel (hidden by default) -->
-    <div id="adminPanel" class="admin-panel hidden">
+    <!-- Admin Panel Window (hidden by default) -->
+    <div id="adminPanel" class="win95-window hidden">
+        <div class="win95-window-titlebar">
+            <span class="win95-window-title">ADMINISTRATOR PANEL</span>
+            <button class="win95-window-close" id="adminWindowClose">&times;</button>
+        </div>
+        <div class="win95-window-content">
         <div class="admin-container">
             <h2>ADMINISTRATOR PANEL</h2>
             <button id="logoutBtn" class="logout-btn">LOGOUT</button>
@@ -47,6 +51,7 @@
                 <h3>ENTRY ARCHIVE</h3>
                 <div id="adminPostsContainer"></div>
             </div>
+        </div>
         </div>
     </div>
 
@@ -77,6 +82,25 @@
                 <span class="taskbar-icon">📝</span>
                 <span class="taskbar-label">NOTES</span>
             </button>
+            <button id="adminBtn" class="taskbar-btn admin-taskbar-btn hidden">
+                <span class="taskbar-icon">⚙️</span>
+                <span class="taskbar-label">ADMIN</span>
+            </button>
+        </div>
+        
+        <!-- Notes App Window -->
+        <div id="notesWindow" class="win95-window hidden">
+            <div class="win95-window-titlebar">
+                <span class="win95-window-title">NOTES</span>
+                <button class="win95-window-close" id="notesWindowClose">&times;</button>
+            </div>
+            <div class="win95-window-content">
+                <div class="notes-window-content">
+                    <h3>CLOSED NOTES</h3>
+                    <div id="closedNotesContainer" class="closed-notes-container"></div>
+                    <p id="noClosedNotes" class="no-closed-notes">NO CLOSED NOTES</p>
+                </div>
+            </div>
         </div>
     </div>
 
