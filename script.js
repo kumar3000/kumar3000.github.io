@@ -1,5 +1,7 @@
-// Admin password - Change this to your desired password
-const ADMIN_PASSWORD = 'admin123'; // Change this!
+// Admin password hash - This is the SHA-256 hash of your password
+// To change password: Use an online SHA-256 generator with your desired password
+// Default password is 'admin123' - CHANGE THIS HASH!
+const ADMIN_PASSWORD_HASH = '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9';
 
 // Storage keys
 const STORAGE_KEY_POSTS = 'blog_posts';
@@ -23,6 +25,9 @@ const emptyState = document.getElementById('emptyState');
 const filterTabs = document.querySelectorAll('.tab-btn');
 const editorTitle = document.getElementById('editorTitle');
 const deletePostBtn = document.getElementById('deletePostBtn');
+const blogViewerModal = document.getElementById('blogViewerModal');
+const blogViewerContent = document.getElementById('blogViewerContent');
+const closeBlogModal = document.querySelector('.close-blog');
 
 // State
 let currentFilter = 'all';
@@ -56,12 +61,19 @@ function setupEventListeners() {
         });
     });
 
-    // Close modal when clicking outside
+    // Close modals when clicking outside
     window.addEventListener('click', (e) => {
         if (e.target === loginModal) {
             closeLoginModal();
         }
+        if (e.target === blogViewerModal) {
+            closeBlogViewer();
+        }
     });
+    
+    if (closeBlogModal) {
+        closeBlogModal.addEventListener('click', closeBlogViewer);
+    }
 
     // Event delegation for admin post actions - set up after DOM is ready
     if (adminPostsContainer) {
@@ -112,11 +124,23 @@ function closeLoginModal() {
     loginError.textContent = '';
 }
 
-function handleLogin(e) {
+// Hash function for password verification
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password);
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return hashHex;
+}
+
+async function handleLogin(e) {
     e.preventDefault();
     const password = passwordInput.value;
     
-    if (password === ADMIN_PASSWORD) {
+    const passwordHash = await hashPassword(password);
+    
+    if (passwordHash === ADMIN_PASSWORD_HASH) {
         localStorage.setItem(STORAGE_KEY_ADMIN, 'true');
         closeLoginModal();
         showAdminPanel();
@@ -167,19 +191,28 @@ function loadPosts() {
     
     emptyState.classList.add('hidden');
     
-    // Sort by date (newest first)
-    filteredPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Separate posts and blogs
+    const shortPosts = filteredPosts.filter(p => p.type === 'post');
+    const blogPosts = filteredPosts.filter(p => p.type === 'blog');
     
-    filteredPosts.forEach(post => {
+    // Sort by date (newest first)
+    shortPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    blogPosts.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    // Add sticky notes (absolute positioned)
+    shortPosts.forEach(post => {
+        const postCard = createPostCard(post);
+        postsContainer.appendChild(postCard);
+    });
+    
+    // Add file icons directly to posts container (absolute positioned)
+    blogPosts.forEach(post => {
         const postCard = createPostCard(post);
         postsContainer.appendChild(postCard);
     });
 }
 
 function createPostCard(post) {
-    const card = document.createElement('div');
-    card.className = 'post-card';
-    
     const date = new Date(post.date);
     const formattedDate = date.toLocaleDateString('en-US', { 
         year: 'numeric', 
@@ -187,14 +220,272 @@ function createPostCard(post) {
         day: 'numeric' 
     });
     
-    card.innerHTML = `
-        <span class="post-type ${post.type}">${post.type}</span>
-        <h2 class="post-title">${escapeHtml(post.title)}</h2>
-        <p class="post-content">${escapeHtml(post.content)}</p>
-        <p class="post-date">${formattedDate}</p>
-    `;
+    if (post.type === 'post') {
+        // Sticky note style for short posts - draggable and closable
+        const card = document.createElement('div');
+        card.className = 'sticky-note';
+        card.dataset.postId = post.id;
+        card.style.position = 'absolute';
+        
+        // Restore saved position if exists, otherwise use random
+        const savedPos = getStickyNotePosition(post.id);
+        if (savedPos) {
+            card.style.left = `${savedPos.x}px`;
+            card.style.top = `${savedPos.y}px`;
+            card.style.transform = `rotate(${savedPos.rotation}deg)`;
+        } else {
+            // Random initial position
+            const randomX = Math.random() * (window.innerWidth - 300) + 50;
+            const randomY = Math.random() * (window.innerHeight - 300) + 100;
+            card.style.left = `${randomX}px`;
+            card.style.top = `${randomY}px`;
+            card.style.transform = `rotate(${(Math.random() * 6 - 3)}deg)`;
+        }
+        
+        card.innerHTML = `
+            <button class="sticky-close" data-post-id="${post.id}">&times;</button>
+            <h3 class="sticky-title">${escapeHtml(post.title)}</h3>
+            <p class="sticky-content">${escapeHtml(post.content)}</p>
+            <span class="sticky-date">${formattedDate}</span>
+        `;
+        
+        // Make draggable
+        makeStickyNoteDraggable(card, post.id);
+        
+        // Add close button handler
+        const closeBtn = card.querySelector('.sticky-close');
+        closeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closeStickyNote(post.id);
+        });
+        
+        return card;
+    } else {
+        // Windows 95/98 style file icon for blog posts - draggable desktop icon
+        const card = document.createElement('div');
+        card.className = 'win95-file';
+        card.dataset.postId = post.id;
+        card.style.position = 'absolute';
+        card.style.cursor = 'pointer';
+        
+        // Show full title - no truncation
+        const displayTitle = post.title;
+        
+        // Grid size for snapping (120px columns, 120px rows)
+        const gridSize = 120;
+        
+        // Restore saved position or use default grid position
+        const savedPos = getBlogFilePosition(post.id);
+        if (savedPos) {
+            card.style.left = `${savedPos.x}px`;
+            card.style.top = `${savedPos.y}px`;
+        } else {
+            // Default grid position based on index
+            const blogPosts = getPosts().filter(p => p.type === 'blog');
+            const index = blogPosts.findIndex(p => p.id === post.id);
+            const cols = Math.floor((window.innerWidth - 200) / gridSize);
+            const col = index % cols;
+            const row = Math.floor(index / cols);
+            card.style.left = `${50 + col * gridSize}px`;
+            card.style.top = `${150 + row * gridSize}px`;
+        }
+        
+        card.innerHTML = `
+            <div class="win95-icon">
+                <div class="win95-icon-image">
+                    <div class="win95-doc-icon"></div>
+                </div>
+                <div class="win95-icon-label">${escapeHtml(displayTitle)}</div>
+            </div>
+        `;
+        
+        // Make draggable with grid snapping
+        makeBlogFileDraggable(card, post.id);
+        
+        // Single click to select, double click to open
+        let clickTimer = null;
+        card.addEventListener('click', (e) => {
+            if (clickTimer === null) {
+                clickTimer = setTimeout(() => {
+                    clickTimer = null;
+                    // Single click - just select (visual feedback)
+                    document.querySelectorAll('.win95-file').forEach(f => f.classList.remove('selected'));
+                    card.classList.add('selected');
+                }, 300);
+            }
+        });
+        
+        card.addEventListener('dblclick', (e) => {
+            if (clickTimer) {
+                clearTimeout(clickTimer);
+                clickTimer = null;
+            }
+            openBlogViewer(post);
+        });
+        
+        return card;
+    }
+}
+
+// Draggable functionality for sticky notes
+function makeStickyNoteDraggable(element, postId) {
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
     
-    return card;
+    // Extract rotation from transform
+    const match = element.style.transform.match(/rotate\(([^)]+)\)/);
+    const rotation = match ? parseFloat(match[1]) : 0;
+    
+    element.addEventListener('mousedown', dragStart);
+    
+    function dragStart(e) {
+        if (e.target.classList.contains('sticky-close')) return;
+        
+        const rect = element.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        
+        if (e.target === element || element.contains(e.target)) {
+            isDragging = true;
+            element.style.zIndex = '1000';
+            element.style.cursor = 'grabbing';
+            
+            document.addEventListener('mousemove', drag);
+            document.addEventListener('mouseup', dragEnd);
+        }
+    }
+    
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            const newX = e.clientX - offsetX;
+            const newY = e.clientY - offsetY;
+            
+            element.style.left = `${newX}px`;
+            element.style.top = `${newY}px`;
+            element.style.transform = `rotate(${rotation}deg)`;
+        }
+    }
+    
+    function dragEnd(e) {
+        if (isDragging) {
+            isDragging = false;
+            element.style.cursor = 'grab';
+            
+            // Save position
+            const rect = element.getBoundingClientRect();
+            saveStickyNotePosition(postId, {
+                x: rect.left,
+                y: rect.top,
+                rotation: rotation
+            });
+            
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+    }
+}
+
+function getStickyNotePosition(postId) {
+    const saved = localStorage.getItem(`sticky_pos_${postId}`);
+    return saved ? JSON.parse(saved) : null;
+}
+
+function saveStickyNotePosition(postId, position) {
+    localStorage.setItem(`sticky_pos_${postId}`, JSON.stringify(position));
+}
+
+function closeStickyNote(postId) {
+    if (confirm('DELETE THIS NOTE?')) {
+        const posts = getPosts();
+        const filteredPosts = posts.filter(p => p.id !== postId);
+        savePosts(filteredPosts);
+        localStorage.removeItem(`sticky_pos_${postId}`);
+        loadPosts();
+        loadAdminPosts();
+    }
+}
+
+// Draggable functionality for blog files with grid snapping
+function makeBlogFileDraggable(element, postId) {
+    let isDragging = false;
+    let offsetX = 0;
+    let offsetY = 0;
+    const gridSize = 120; // Grid snap size
+    
+    element.addEventListener('mousedown', dragStart);
+    
+    function dragStart(e) {
+        // Don't start drag on label clicks (allow text selection)
+        if (e.target.classList.contains('win95-icon-label')) {
+            return;
+        }
+        
+        const rect = element.getBoundingClientRect();
+        offsetX = e.clientX - rect.left;
+        offsetY = e.clientY - rect.top;
+        
+        isDragging = true;
+        element.style.zIndex = '1000';
+        element.style.cursor = 'grabbing';
+        element.classList.add('dragging');
+        
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('mouseup', dragEnd);
+        e.preventDefault();
+    }
+    
+    function drag(e) {
+        if (isDragging) {
+            e.preventDefault();
+            let newX = e.clientX - offsetX;
+            let newY = e.clientY - offsetY;
+            
+            // Snap to grid
+            newX = Math.round(newX / gridSize) * gridSize;
+            newY = Math.round(newY / gridSize) * gridSize;
+            
+            // Keep within bounds
+            const minX = 20;
+            const minY = 20;
+            const maxX = window.innerWidth - 120;
+            const maxY = window.innerHeight - 120;
+            
+            newX = Math.max(minX, Math.min(maxX, newX));
+            newY = Math.max(minY, Math.min(maxY, newY));
+            
+            element.style.left = `${newX}px`;
+            element.style.top = `${newY}px`;
+        }
+    }
+    
+    function dragEnd(e) {
+        if (isDragging) {
+            isDragging = false;
+            element.style.cursor = 'pointer';
+            element.classList.remove('dragging');
+            
+            // Save position
+            const rect = element.getBoundingClientRect();
+            saveBlogFilePosition(postId, {
+                x: rect.left,
+                y: rect.top
+            });
+            
+            document.removeEventListener('mousemove', drag);
+            document.removeEventListener('mouseup', dragEnd);
+        }
+    }
+}
+
+function getBlogFilePosition(postId) {
+    const saved = localStorage.getItem(`blog_file_pos_${postId}`);
+    return saved ? JSON.parse(saved) : null;
+}
+
+function saveBlogFilePosition(postId, position) {
+    localStorage.setItem(`blog_file_pos_${postId}`, JSON.stringify(position));
 }
 
 function loadAdminPosts() {
@@ -378,6 +669,30 @@ function deletePostDirectly(postId) {
     if (String(editingPostId) === postIdStr) {
         hidePostEditor();
     }
+}
+
+// Blog Viewer Functions
+function openBlogViewer(post) {
+    const date = new Date(post.date);
+    const formattedDate = date.toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+    });
+    
+    blogViewerContent.innerHTML = `
+        <h2 class="blog-viewer-title">${escapeHtml(post.title)}</h2>
+        <p class="blog-viewer-date">${formattedDate}</p>
+        <div class="blog-viewer-content">${escapeHtml(post.content).replace(/\n/g, '<br>')}</div>
+    `;
+    
+    blogViewerModal.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+}
+
+function closeBlogViewer() {
+    blogViewerModal.style.display = 'none';
+    document.body.style.overflow = '';
 }
 
 // Utility Functions
