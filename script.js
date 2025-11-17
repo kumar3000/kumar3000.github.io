@@ -147,16 +147,19 @@ function setupEventListeners() {
 
 // Initialize Desktop Icons
 function initializeDesktopIcons() {
-    // Position desktop icons with saved positions or defaults
-    const myComputerPos = getDesktopIconPosition('myComputer');
-    const fileManagerPos = getDesktopIconPosition('fileManager');
+    // Stack icons vertically like a real desktop - same x position, different y positions
+    const iconSpacing = 90; // Vertical spacing between icons (px)
+    const startX = 20; // Starting x position for all icons
+    const startY = 20; // Starting y position for first icon
     
-    positionDesktopIcon(document.getElementById('myComputerIcon'), myComputerPos.x || 20, myComputerPos.y || 20);
-    positionDesktopIcon(fileManagerIcon, fileManagerPos.x || 20, fileManagerPos.y || 100);
+    // Position My Computer icon
+    const myComputerIcon = document.getElementById('myComputerIcon');
+    positionDesktopIcon(myComputerIcon, startX, startY);
     
-    // Make icons draggable
-    makeDesktopIconDraggable(document.getElementById('myComputerIcon'), 'myComputer');
-    makeDesktopIconDraggable(fileManagerIcon, 'fileManager');
+    // Position File Manager icon below My Computer
+    positionDesktopIcon(fileManagerIcon, startX, startY + iconSpacing);
+    
+    // Icons are not draggable - they stay in place like regular desktop icons
 }
 
 function positionDesktopIcon(icon, x, y) {
