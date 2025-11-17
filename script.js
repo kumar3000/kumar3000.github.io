@@ -66,12 +66,19 @@ function setupEventListeners() {
     // Desktop icons
     fileManagerIcon.addEventListener('dblclick', () => openFileManager());
     
-    // Desktop icon selection
+    // Desktop icon selection and restore minimized windows
     document.querySelectorAll('.desktop-icon').forEach(icon => {
         icon.addEventListener('click', (e) => {
             if (e.detail === 1) {
+                // Single click - select icon
                 document.querySelectorAll('.desktop-icon').forEach(i => i.classList.remove('selected'));
                 icon.classList.add('selected');
+                
+                // If clicking the file manager icon and its window is minimized, restore it
+                if (icon === fileManagerIcon && fileManagerWindow.classList.contains('minimized')) {
+                    fileManagerWindow.classList.remove('minimized');
+                    openWindow(fileManagerWindow);
+                }
             }
         });
     });
@@ -318,12 +325,15 @@ function initializeWindows() {
     // Set initial window positions
     if (fileManagerWindow) {
         positionWindow(fileManagerWindow, 100, 100);
+        makeWindowResizable(fileManagerWindow);
     }
     if (fileViewerWindow) {
         positionWindow(fileViewerWindow, 150, 150);
+        makeWindowResizable(fileViewerWindow);
     }
     if (adminPanel) {
         positionWindow(adminPanel, 200, 200);
+        makeWindowResizable(adminPanel);
     }
 }
 
@@ -492,35 +502,205 @@ function bringToFront(window) {
     updateTaskbar();
 }
 
+// Make window resizable
+function makeWindowResizable(windowElement) {
+    if (!windowElement || windowElement.dataset.resizableInitialized === 'true') {
+        return;
+    }
+    windowElement.dataset.resizableInitialized = 'true';
+    
+    // Store original dimensions for restore
+    if (!windowElement.dataset.originalWidth) {
+        windowElement.dataset.originalWidth = windowElement.style.width || '600px';
+        windowElement.dataset.originalHeight = windowElement.style.height || '400px';
+    }
+    
+    // Create resize handles
+    const handles = ['n', 's', 'e', 'w', 'ne', 'nw', 'se', 'sw'];
+    handles.forEach(direction => {
+        const handle = document.createElement('div');
+        handle.className = `win95-window-resize-handle ${direction}`;
+        windowElement.appendChild(handle);
+        
+        let isResizing = false;
+        let startX = 0;
+        let startY = 0;
+        let startWidth = 0;
+        let startHeight = 0;
+        let startLeft = 0;
+        let startTop = 0;
+        
+        handle.addEventListener('mousedown', (e) => {
+            if (windowElement.classList.contains('maximized')) {
+                return;
+            }
+            
+            isResizing = true;
+            windowElement.classList.add('resizing');
+            bringToFront(windowElement);
+            
+            const rect = windowElement.getBoundingClientRect();
+            startX = e.clientX;
+            startY = e.clientY;
+            startWidth = rect.width;
+            startHeight = rect.height;
+            startLeft = rect.left;
+            startTop = rect.top;
+            
+            document.addEventListener('mousemove', handleResize);
+            document.addEventListener('mouseup', stopResize);
+            
+            e.preventDefault();
+            e.stopPropagation();
+        });
+        
+        function handleResize(e) {
+            if (!isResizing) return;
+            
+            const deltaX = e.clientX - startX;
+            const deltaY = e.clientY - startY;
+            
+            let newWidth = startWidth;
+            let newHeight = startHeight;
+            let newLeft = startLeft;
+            let newTop = startTop;
+            
+            const minWidth = 300;
+            const minHeight = 200;
+            
+            // Handle different resize directions
+            if (direction.includes('e')) {
+                newWidth = Math.max(minWidth, startWidth + deltaX);
+            }
+            if (direction.includes('w')) {
+                newWidth = Math.max(minWidth, startWidth - deltaX);
+                newLeft = startLeft + deltaX;
+            }
+            if (direction.includes('s')) {
+                newHeight = Math.max(minHeight, startHeight + deltaY);
+            }
+            if (direction.includes('n')) {
+                newHeight = Math.max(minHeight, startHeight - deltaY);
+                newTop = startTop + deltaY;
+            }
+            
+            // Constrain to viewport
+            const maxWidth = window.innerWidth - newLeft;
+            const maxHeight = window.innerHeight - 30 - newTop; // Account for taskbar
+            
+            newWidth = Math.min(newWidth, maxWidth);
+            newHeight = Math.min(newHeight, maxHeight);
+            
+            // Apply new dimensions
+            windowElement.style.width = `${newWidth}px`;
+            windowElement.style.height = `${newHeight}px`;
+            if (direction.includes('w')) {
+                windowElement.style.left = `${newLeft}px`;
+            }
+            if (direction.includes('n')) {
+                windowElement.style.top = `${newTop}px`;
+            }
+            
+            e.preventDefault();
+        }
+        
+        function stopResize() {
+            if (isResizing) {
+                isResizing = false;
+                windowElement.classList.remove('resizing');
+                document.removeEventListener('mousemove', handleResize);
+                document.removeEventListener('mouseup', stopResize);
+            }
+        }
+    });
+}
+
 function minimizeWindow(window) {
-    window.classList.add('minimized');
-    updateTaskbar();
+    // Add minimizing animation
+    window.classList.add('window-minimizing');
+    
+    setTimeout(() => {
+        window.classList.add('minimized');
+        window.classList.remove('window-minimizing');
+        updateTaskbar();
+    }, 200);
 }
 
 function maximizeWindow(window) {
     if (window.classList.contains('maximized')) {
+        // Restore window
+        window.classList.add('maximizing');
         window.classList.remove('maximized');
-        positionWindow(window, 100, 100);
+        
+        // Restore original position and size
+        const originalWidth = window.dataset.originalWidth || '600px';
+        const originalHeight = window.dataset.originalHeight || '400px';
+        const originalLeft = window.dataset.originalLeft || '100px';
+        const originalTop = window.dataset.originalTop || '100px';
+        
+        window.style.width = originalWidth;
+        window.style.height = originalHeight;
+        window.style.left = originalLeft;
+        window.style.top = originalTop;
+        
+        setTimeout(() => {
+            window.classList.remove('maximizing');
+        }, 200);
     } else {
-        window.classList.add('maximized');
+        // Save current position and size
+        const rect = window.getBoundingClientRect();
+        window.dataset.originalWidth = `${rect.width}px`;
+        window.dataset.originalHeight = `${rect.height}px`;
+        window.dataset.originalLeft = `${rect.left}px`;
+        window.dataset.originalTop = `${rect.top}px`;
+        
+        // Maximize with animation
+        window.classList.add('maximizing', 'maximized');
+        setTimeout(() => {
+            window.classList.remove('maximizing');
+        }, 200);
     }
     updateTaskbar();
 }
 
 function closeWindow(window) {
-    window.classList.add('hidden');
+    // Add closing animation
+    window.classList.add('window-closing');
     window.classList.remove('minimized', 'maximized');
-    updateTaskbar();
+    
+    setTimeout(() => {
+        window.classList.add('hidden');
+        window.classList.remove('window-closing');
+        updateTaskbar();
+    }, 200);
 }
 
 function openWindow(window) {
+    // Remove hidden class first to make it visible
     window.classList.remove('hidden', 'minimized');
+    
+    // Force reflow to ensure animation triggers
+    void window.offsetWidth;
+    
+    // Add opening animation
+    window.classList.add('window-opening');
     bringToFront(window);
     updateTaskbar();
+    
+    // Remove animation class after animation completes
+    setTimeout(() => {
+        window.classList.remove('window-opening');
+    }, 250);
 }
 
 function openFileManager() {
-    openWindow(fileManagerWindow);
+    // If window is minimized, restore it; otherwise open it
+    if (fileManagerWindow.classList.contains('minimized')) {
+        fileManagerWindow.classList.remove('minimized');
+        openWindow(fileManagerWindow);
+    } else {
+        openWindow(fileManagerWindow);
+    }
     loadFiles();
 }
 
@@ -804,27 +984,51 @@ function updateTaskbar() {
         { window: adminPanel, name: 'Administrator Panel' }
     ];
     
+    // Show all windows that are not hidden (including minimized ones)
     const visibleWindows = windows.filter(({ window }) => 
-        !window.classList.contains('hidden') && !window.classList.contains('minimized')
+        !window.classList.contains('hidden')
     );
     
-    const maxZIndex = Math.max(...visibleWindows.map(({ window }) => 
-        parseInt(window.style.zIndex) || 100
-    ));
+    const nonMinimizedWindows = visibleWindows.filter(({ window }) => 
+        !window.classList.contains('minimized')
+    );
+    
+    const maxZIndex = nonMinimizedWindows.length > 0 
+        ? Math.max(...nonMinimizedWindows.map(({ window }) => parseInt(window.style.zIndex) || 100))
+        : 0;
     
     visibleWindows.forEach(({ window, name }) => {
         const task = document.createElement('div');
         task.className = 'taskbar-task';
+        const isMinimized = window.classList.contains('minimized');
         const windowZIndex = parseInt(window.style.zIndex) || 100;
-        if (windowZIndex === maxZIndex) {
+        
+        // Mark as active if it's the topmost non-minimized window
+        if (!isMinimized && windowZIndex === maxZIndex) {
             task.classList.add('active');
         }
+        
+        // Add minimized style if window is minimized
+        if (isMinimized) {
+            task.classList.add('minimized');
+        }
+        
         task.textContent = name;
         task.addEventListener('click', () => {
-            if (window.classList.contains('minimized')) {
+            if (isMinimized) {
+                // Restore minimized window with animation
                 window.classList.remove('minimized');
+                openWindow(window);
+            } else {
+                // If already visible, bring to front or minimize
+                if (windowZIndex === maxZIndex) {
+                    // If it's already active, minimize it
+                    minimizeWindow(window);
+                } else {
+                    // Otherwise, bring to front
+                    bringToFront(window);
+                }
             }
-            bringToFront(window);
         });
         taskbarTasks.appendChild(task);
     });
@@ -841,7 +1045,13 @@ startBtn.addEventListener('click', (e) => {
         }
     } else {
         loginDialog.classList.remove('hidden');
+        // Force reflow to ensure animation triggers
+        void loginDialog.offsetWidth;
+        loginDialog.classList.add('window-opening');
         passwordInput.focus();
+        setTimeout(() => {
+            loginDialog.classList.remove('window-opening');
+        }, 250);
     }
 });
 
